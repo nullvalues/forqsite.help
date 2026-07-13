@@ -10,7 +10,7 @@ primary_files:
   - index.html
   - gap-handoff.html
   - README.md
-touches:  # If this story changes any documented architecture, add docs/architecture.md to this list.
+touches: []
 ---
 
 ## Requires

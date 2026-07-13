@@ -8,7 +8,7 @@ auth_gated: false
 schema_introduces: false
 primary_files:
   - index.html
-touches:  # If this story changes any documented architecture, add docs/architecture.md to this list.
+touches: []
 ---
 
 ## Requires

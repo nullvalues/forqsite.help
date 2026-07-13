@@ -9,7 +9,7 @@ schema_introduces: false
 primary_files:
   - index.html
   - gap-handoff.html
-touches:  # If this story changes any documented architecture, add docs/architecture.md to this list.
+touches: []
 ---
 
 ## Requires
