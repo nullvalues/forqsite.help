@@ -5,12 +5,15 @@ Each checkpoint is tagged after all stories in the phase pass the full checkpoin
 
 ---
 
-## cp1-[phase-name]-complete
+## cp1-bootstrap-complete
 
-**Phase:** 1 — [Phase title]
-**Tag command:** `git tag cp1-[phase-name]-complete && git push origin cp1-[phase-name]-complete`
-**Acceptance:** [Describe what must be true before this checkpoint can be tagged.
-List the key capabilities that must work, and confirm all Phase 1 tests pass.]
+**Phase:** 1 — Bootstrap pairmode methodology
+**Tag command:** `git tag cp1-bootstrap-complete && git push origin cp1-bootstrap-complete`
+**Acceptance:** Pairmode scaffolding is in place alongside the existing, working
+`index.html` / `gap-handoff.html` docs bundle without disrupting it. No code stories
+were required for this phase. Build gate: static HTML, no test failures possible with
+zero code changes. Security audit: no CRITICAL/HIGH findings. Intent review: ALIGNED —
+existing site content confirmed untouched.
 
 ---
 

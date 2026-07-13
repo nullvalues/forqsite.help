@@ -14,7 +14,7 @@ Each phase has a dedicated file in `docs/phases/`.
 
 | Phase | Title | Status | Deferred from | Link |
 |-------|-------|--------|---------------|------|
-| 1 | Bootstrap pairmode methodology | planned | — | [phase-1.md](phase-1.md) |
+| 1 | Bootstrap pairmode methodology | complete | — | [phase-1.md](phase-1.md) |
 | 2 | Refresh docs against forqsite drift | planned | — | [phase-2.md](phase-2.md) |
 
 
