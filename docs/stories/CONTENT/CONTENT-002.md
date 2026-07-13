@@ -26,8 +26,11 @@ touches:  # If this story changes any documented architecture, add docs/architec
   the ten jobs in `scripts/scheduler.ts`: `aaac-thresholds` (*/15min), `domain-reverify`
   (daily 03:00), `notifications-drain` (*/5min), `billing-tokens-daily` (01:00),
   `billing-storage-daily` (02:00), `signup-codes-purge` (6h), `publish-scheduled`
-  (hourly), `rate-limit-cleanup` (daily 03:00), `org-reaper` (daily 04:00, the
-  `FORQSITE_ORG_RETENTION_DAYS` sweep), `fsrs-consolidation` (daily 05:00) — and notes
+  (hourly), `rate-limit-cleanup-daily` (daily 03:00), `org-reaper-daily` (daily 04:00,
+  the `FORQSITE_ORG_RETENTION_DAYS` sweep), `fsrs-consolidation-daily` (daily 05:00) —
+  the `-daily` suffix is part of the actual `scheduler_locks` lease name (confirmed
+  against `JOB_NAME` constants in `rate-limit-cleanup.ts`/`org-reaper.ts` and the
+  `scripts/scheduler.ts` job array; use these exact names, not the bare form) — and notes
   each takes a `scheduler_locks` lease so replicas are safe, and that if the scheduler is
   down, scheduled publishing and notification emails never fire.
 - Operations→Incidents table and the production-install step-3 expected output both

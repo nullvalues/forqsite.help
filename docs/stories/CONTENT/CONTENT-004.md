@@ -55,7 +55,8 @@ issues to fix:
     maps to a work item in the gap handoff." → period instead of dash.
   - gap-handoff, GAP-006/GAP-011: both use a near-identical "exactly the case ... exists
     to catch/covers" construction — reword one of them.
-- Word-tic "silently" (appears ~6 times across both files): keep it where silence is the
+- Word-tic "silently" (appears 5 times across both files: `gap-handoff.html` decoded
+  lines 484 and 526; `index.html` decoded lines 790, 1005, and 1060): keep it where silence is the
   actual failure mode (e.g. the scheduler-down email case, a pack that never loads);
   vary or drop it elsewhere — e.g. "silently loses every uploaded image" → "loses every
   uploaded image with no warning".
@@ -78,5 +79,5 @@ right story.
 - JSON round-trip check on both HTML files after editing.
 - Grep for `—` count in the decoded text before/after — should show a real reduction
   outside of table cells/diagram labels, not just the named examples above.
-- Grep confirms "silently" no longer appears 6 times unchanged in the same six original
+- Grep confirms "silently" no longer appears 5 times unchanged in the same five original
   spots.

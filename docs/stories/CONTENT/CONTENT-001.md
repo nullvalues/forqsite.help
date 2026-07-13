@@ -50,7 +50,7 @@ touches:  # If this story changes any documented architecture, add docs/architec
   the existing file targets port 3000 and hardcoded forqsite.ai/forqsite.com hostnames,
   both compose files declare `build: .` with no Dockerfile, and the root
   `docker-compose.yml`'s new `db` service lacks pgvector with no MinIO service.
-- GAP-005 cites `docs/deployment/Caddyfile.example` and `scripts/rolling-restart.sh:25`
+- GAP-005 cites `docs/deployment/Caddyfile.example` and `scripts/rolling-restart.sh:24`
   as additional evidence of the port 3000 vs 6020 drift.
 - GAP-010 no longer implies signing docs are entirely absent (configuration.md documents
   `FORQSITE_MANIFEST_SIGNING_MAX_AGE_DAYS` / `FORQSITE_REVOKED_SIGNATURES`) and its sweep
