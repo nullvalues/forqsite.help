@@ -1,0 +1,14 @@
+{
+  "pairmode_version": "0.2.0",
+  "effort_tracking": true,
+  "context_budget_threshold": 120000,
+  "context_budget_overrun_pct": 0.1,
+  "expected_step_tokens": 53416,
+  "context_budget_reprompt_margin": 10000,
+  "context_current_tokens": 25000,
+  "context_budget_user_turn_seq": 10,
+  "context_current_tokens_recorded_at": "2026-07-13T20:51:47.374481+00:00",
+  "context_session_reset_at": "2026-07-13T20:51:47.374481+00:00",
+  "last_sync": "2026-07-13",
+  "lessons_applied": []
+}

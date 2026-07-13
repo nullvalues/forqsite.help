@@ -1,0 +1,240 @@
+# Ideology — forqsite.help
+
+> This document captures the **intent layer** beneath the implementation.
+> It records convictions, tradeoffs, and constraints in a form that survives across
+> implementations, agents, and sessions.
+>
+> A reconstruction agent given only this document and `docs/brief.md` should be able to
+> produce an implementation that is recognizably this project — different in form, identical
+> in values.
+>
+> Fill this in before the first story if starting fresh. Fill it in by extracting from the
+> existing implementation if a prototype already exists.
+
+---
+
+## Core convictions
+
+> What does this project believe? State each conviction as a positive claim: "we prefer X over Y
+> because Z." These are not rules — they are the values from which rules derive.
+> A conviction should be strong enough to resolve a tradeoff when two good options conflict.
+
+<!--
+Examples:
+- "We prefer explicit configuration over inferred defaults, because configuration that can be
+  read is configuration that can be understood by the next agent."
+- "We prefer correctness over performance at this stage, because an incorrect fast system
+  cannot be trusted to optimize."
+- "We prefer small composable functions over large orchestrators, because the unit of
+  replaceability matters more than the unit of convenience."
+
+Add one conviction per bullet. State the preference and the reason. Three to seven convictions
+is the right range — fewer suggests the ideology is underdeveloped; more suggests it is not
+actually a set of convictions but a list of preferences.
+-->
+
+
+- We prefer zero-dependency static HTML over any framework, server, or build step,
+  because when a forqsite instance is down its own dogfooded docs would be down too —
+  and the docs exist precisely to help during that failure.
+- We prefer fully self-contained, inlined HTML (fonts, styles, scripts embedded) over
+  externally-linked assets, because "works offline, from `file://`, or behind any static
+  file server" is a hard requirement, not a nice-to-have.
+- We prefer treating `index.html` and `gap-handoff.html` as generated artifacts over
+  hand-maintained source, because the source of truth is an external design session —
+  hand edits made directly to the bundles get silently lost on the next re-export.
+
+
+---
+
+## Value hierarchy
+
+> When values conflict, which wins? Record the priority order and the reasoning.
+> This section is most useful when populated from real conflict — a moment when two
+> good values pointed in opposite directions and a decision was made.
+
+<!--
+Format each entry as:
+  [Higher value] over [lower value] — [the situation where this matters] — [why]
+
+Examples:
+- "Auditability over convenience — when logging a decision requires extra code, write
+  the extra code. A system that cannot explain itself cannot be trusted."
+- "Backward compatibility over refactoring clarity — at this stage, existing integrations
+  must not break. Clean-up is for a future phase when the API surface is stable."
+- "Reversibility over speed — prefer designs where bad decisions can be undone. Move fast
+  in a direction that can be walked back."
+-->
+
+
+- "Availability over freshness — the docs staying reachable during a forqsite outage
+  matters more than being up-to-the-minute. A stale doc you can read beats a fresh one
+  you can't."
+- "Self-containment over convenience — no build step, even though it makes hand-editing
+  harder, because the whole point is that this site depends on nothing external to run."
+
+
+---
+
+## Accepted constraints
+
+> Non-negotiables with their rationale. Not just the rule — the reason the rule exists
+> and what it protects. A constraint without a rationale will be violated by the first
+> agent that encounters a situation the rule author did not anticipate.
+
+<!--
+Format each entry as:
+
+### [Constraint name]
+
+**Rule:** [What must never happen, or what must always be true]
+
+**Protects:** [What breaks, degrades, or becomes untrustworthy if this constraint is violated]
+
+**Rationale:** [Why this protection is worth the cost it imposes]
+
+**Override path:** [Under what conditions, if any, can this constraint be deliberately overridden?
+  If never: say "no override permitted." If conditional: describe the gate.]
+-->
+
+
+### Zero runtime dependencies
+
+**Rule:** No server, no database, no build step, no external asset requests
+(fonts/CSS/JS must be inlined) in `index.html` or `gap-handoff.html`.
+
+**Protects:** The ability to open the docs from `file://`, offline, or from any dumb
+static file server — including while the forqsite instance the docs describe is down.
+
+**Rationale:** This site exists specifically because every other forqsite property is
+dogfooded on a forqsite tenant. If this one had a runtime dependency of its own, it
+could fail at the exact moment it's needed.
+
+**Override path:** No override permitted — this is the reason the repo exists.
+
+### Generated-artifact discipline
+
+**Rule:** `index.html` and `gap-handoff.html` are not hand-edited. Changes are made in
+the source design session and re-exported.
+
+**Protects:** Consistency between the source of truth and the published bundles;
+prevents silent drift where a hand-edit is overwritten by the next re-export.
+
+**Rationale:** These are compiled, single-file bundles — treating them as editable
+source invites edits that vanish on the next sync.
+
+**Override path:** A trivial, urgent fix (typo, broken link) may be hand-patched
+directly if re-export isn't immediately available, but should be re-applied at the
+source and reconciled on the next export.
+
+
+---
+
+## Prototype fingerprints
+
+> If this ideology document was written after a prototype already exists, record the patterns,
+> habits, and choices in the prototype that reflect the developer's style rather than the
+> project's values. A reconstruction agent should understand which patterns are free to change.
+>
+> If this document was written before any prototype: leave this section blank and fill it
+> in during or after the first implementation.
+
+<!--
+The goal is to distinguish "this is how we believe the system should work" from "this is
+how I happen to build things." A reconstruction agent that inherits only the fingerprints
+without knowing they are fingerprints will treat them as constraints. Name them explicitly
+so they can be questioned.
+
+Format:
+
+### [Pattern name]
+
+**Observed in prototype:** [Where in the codebase this pattern appears]
+
+**Why it exists:** [Developer preference? Convenience? Legacy? Genuine conviction?]
+
+**Free to change?** Yes / Conditional / No — [reason]
+-->
+
+
+_(No prototype fingerprints recorded. If a prototype exists, review it for patterns that
+reflect developer habit rather than project values and record them here.)_
+
+
+---
+
+## Reconstruction guidance
+
+> Instructions for an agent reconstructing this system from ideology alone — without access
+> to the original source code.
+
+### Must preserve
+
+> These elements are non-negotiable. An implementation that omits or contradicts them is
+> not this project.
+
+
+- Zero runtime dependencies: no server, database, build step, or external asset fetch.
+- Self-hosted independently of any forqsite tenant — this repo must not become a
+  forqsite tenant itself, or it loses the reason it exists.
+- Fully offline-capable: openable from `file://` with no network access.
+
+
+### Should question
+
+> These elements are present in the current implementation but may not be the best approach.
+> A reconstruction agent is encouraged to find a better solution — and should justify the
+> change against the core convictions above.
+
+
+- `gap-handoff.html` mixes a live backlog (GAP-001…011) into the same generated-bundle
+  format as the reference docs. As gap items get resolved upstream in
+  `nullvalues/forqsite`, this file needs pruning — a static generated bundle is an
+  awkward fit for something that should track live status; a future iteration might
+  want a lighter-weight status marker instead of a full re-export per prune.
+
+
+### Free to change
+
+> Implementation details the reconstruction agent should feel no obligation to preserve.
+> These were choices, not values.
+
+
+- Specific HTML/CSS structure, visual theme, and inline JS implementation of `index.html`.
+- Hosting mechanism (Caddy, GitHub Pages, nginx, `python3 -m http.server` are all
+  explicitly interchangeable per the README).
+- The exact format of the gap-handoff backlog, as long as it stays a single
+  self-contained file with no runtime dependencies.
+
+
+---
+
+## Comparison basis
+
+> When two implementations are compared against this ideology, these are the dimensions that
+> matter. Used by the comparison rubric to evaluate which implementation is better aligned
+> with intent.
+
+<!--
+List three to five dimensions. Each should be a quality that can be assessed from reading
+the code — not a feature checklist. Examples:
+- "Constraint traceability: can a reader determine why a given protection exists?"
+- "Intent legibility: does the code explain what it is protecting and why?"
+- "Lesson integration: does the system make it easy to learn from failures?"
+-->
+
+
+- Zero-dependency compliance: does it still open from `file://` with no network calls?
+- Self-containment: are fonts/styles/scripts fully inlined, with no external requests?
+- Generated-artifact hygiene: is there a clear source-of-truth workflow, with no
+  hand-drifted content diverging from it?
+- Gap-backlog currency: are resolved GAP items pruned, and unresolved ones still accurate
+  against `nullvalues/forqsite@main`?
+
+
+---
+
+*This document is a companion to `docs/brief.md` (what and why) and `docs/architecture.md`
+(how). Together they form the complete ideology record for forqsite.help.*
+
+*Last reviewed: _(not yet reviewed)_*

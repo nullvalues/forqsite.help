@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "deny": [
+      "Edit(docs/phases/permissions/**)",
+      "Write(docs/phases/permissions/**)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run python /mnt/work/flex/hooks/pre_tool_use.py"
+          }
+        ]
+      }
+    ]
+  }
+}

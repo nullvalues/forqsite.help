@@ -1,0 +1,35 @@
+# forqsite.help — Phase Index
+
+This document is the index of all build phases for the project.
+Each phase has a dedicated file in `docs/phases/`.
+
+**Naming convention** (if using a string predicate):
+- Predicate: project-specific (e.g. `PM`). 3-digit zero-padded number.
+- Suffix system: `-ante[N]` (preflight, blocks parent), `-main` (the phase itself), `-post[N]` (remediation, blocks subsequent phases), `-sec` (security prerequisite, same semantics as `-ante`).
+- Alphabetical sort matches build order: `'a' < 'm' < 'p'`.
+- Checkpoint tags follow the same naming: `cp-<PRED>NNN-main`, etc.
+- Omit suffix for projects using sequential integer IDs.
+
+**Next to build:** [Phase 2: Refresh docs against forqsite drift](phase-2.md)
+
+| Phase | Title | Status | Deferred from | Link |
+|-------|-------|--------|---------------|------|
+| 1 | Bootstrap pairmode methodology | planned | — | [phase-1.md](phase-1.md) |
+| 2 | Refresh docs against forqsite drift | planned | — | [phase-2.md](phase-2.md) |
+
+
+## Backlog promotions
+
+_(List items promoted from the Do-Later / Do-Much-Later backlog into active phases here, with a one-line reason and the target phase.)_
+
+---
+
+## Proposed phases (not yet sequenced)
+
+Phases conceived before they enter the build queue use the filename convention
+`phase-proposed-<kebab-name>-YYYYMMDD-NNN.md`. No sequential number until
+sequenced. When sequenced, stories are absorbed into the next available phase
+and this file is deleted (git history records the transit).
+
+| Proposed file | Title | Era |
+|---------------|-------|-----|

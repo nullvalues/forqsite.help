@@ -1,0 +1,18 @@
+{
+  "project_name": "forqsite.help",
+  "project_description": "",
+  "stack": "static HTML, no build step, no server, no database",
+  "what": "Administrator documentation site for forqsite (self-hosted multi-tenant website builder), plus a dev-to-prod gap analysis doc",
+  "why": "forqsite.com is dogfooded as a tenant on a forqsite install; this docs site deliberately is NOT, so docs stay available when a forqsite instance is down",
+  "operator_contact": "",
+  "build_command": "none \u2014 static HTML, open file:// or serve with any static file server",
+  "test_command": "none \u2014 static HTML, open file:// or serve with any static file server",
+  "migration_command": "",
+  "domain_model": "",
+  "domain_isolation_rule": "",
+  "checklist_items": [],
+  "protected_paths": [],
+  "non_negotiables": [],
+  "module_structure": [],
+  "layer_rules": []
+}
