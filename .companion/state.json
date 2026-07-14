@@ -6,9 +6,14 @@
   "expected_step_tokens": 53416,
   "context_budget_reprompt_margin": 10000,
   "context_current_tokens": 25000,
-  "context_budget_user_turn_seq": 18,
+  "context_budget_user_turn_seq": 20,
   "context_current_tokens_recorded_at": "2026-07-13T20:51:47.374481+00:00",
   "context_session_reset_at": "2026-07-13T20:51:47.374481+00:00",
   "last_sync": "2026-07-13",
-  "lessons_applied": []
+  "lessons_applied": [],
+  "current_story": {
+    "id": "CONTENT-002",
+    "set_at": "2026-07-14T13:20:52.561524+00:00",
+    "title": "Embellishments: add repo-grounded detail missing from the docs (E1-E8)"
+  }
 }

@@ -1,0 +1,9 @@
+{
+  "story_id": "CONTENT-002",
+  "story_spec": "docs/stories/CONTENT/CONTENT-002.md",
+  "allowed_paths": [
+    "index.html",
+    "docs/stories/CONTENT/CONTENT-002.md"
+  ],
+  "generated_at": "2026-07-14T13:20:52Z"
+}
