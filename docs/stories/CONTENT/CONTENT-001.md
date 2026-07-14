@@ -9,7 +9,8 @@ schema_introduces: false
 primary_files:
   - index.html
   - gap-handoff.html
-touches: []
+touches:
+  - README.md  # DOC CURRENCY: GAP-001..011 reference must match the corrected 10-item count
 ---
 
 ## Requires
