@@ -11,6 +11,8 @@ primary_files:
   - gap-handoff.html
 touches:
   - README.md  # DOC CURRENCY: GAP-001..011 reference must match the corrected 10-item count
+  - docs/ideology.md  # DOC CURRENCY: same GAP-001..011 reference in Prototype fingerprints
+  - docs/reconstruction.md  # DOC CURRENCY: same GAP-001..011 reference
 ---
 
 ## Requires
