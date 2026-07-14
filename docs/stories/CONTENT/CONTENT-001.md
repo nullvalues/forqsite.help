@@ -2,7 +2,7 @@
 id: CONTENT-001
 rail: CONTENT
 title: Consistency fixes: correct index.html/gap-handoff.html drift vs forqsite source (C1-C13)
-status: draft
+status: complete
 phase: "2"
 auth_gated: false
 schema_introduces: false
