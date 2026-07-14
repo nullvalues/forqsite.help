@@ -6,7 +6,7 @@
   "expected_step_tokens": 53416,
   "context_budget_reprompt_margin": 10000,
   "context_current_tokens": 25000,
-  "context_budget_user_turn_seq": 15,
+  "context_budget_user_turn_seq": 16,
   "context_current_tokens_recorded_at": "2026-07-13T20:51:47.374481+00:00",
   "context_session_reset_at": "2026-07-13T20:51:47.374481+00:00",
   "last_sync": "2026-07-13",

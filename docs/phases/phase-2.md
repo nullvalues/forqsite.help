@@ -52,3 +52,9 @@ Note: E4's optional Dev/E2E env-var group (`TEST_ADMIN_*` / `TEST_ORGADMIN_*`) i
 explicitly marked optional in the source review plan; the CONTENT-002 story below
 should decide whether to include it rather than growing the env table unbounded by
 default.
+
+Note: CONTENT-001's first review revert cited `docs/ideology.md`'s Generated-artifact
+discipline constraint (bundles are not hand-edited beyond trivial fixes). An explicit
+Phase 2 exception was recorded in `docs/ideology.md` on 2026-07-14 — loop-mediated,
+spec-cited, reviewed edits satisfy the constraint's intent. See that doc for the full
+rationale.

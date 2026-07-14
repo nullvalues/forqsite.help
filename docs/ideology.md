@@ -127,6 +127,20 @@ source invites edits that vanish on the next sync.
 directly if re-export isn't immediately available, but should be re-applied at the
 source and reconciled on the next export.
 
+**Phase 2 exception (recorded 2026-07-14):** Phase 2's CONTENT-001..004 and INFRA-001
+stories hand-edit both bundles beyond the trivial-fix override — correcting drift
+against `/mnt/work/forqsite`, adding repo-grounded detail, UX fixes, and a prose pass.
+This is accepted as satisfying the constraint's intent, not a bypass of it: every
+edit is made through the reviewed pairmode build loop (builder implements against a
+spec citing exact source evidence, reviewer independently re-verifies each claim,
+the commit is traceable to the story spec), so the loop's audit trail substitutes for
+a source-session re-export — the risk this rule protects against (silent,
+unreviewed, untraceable hand-drift) does not apply here. No auto-sync tool exists
+yet (see `docs/phases/phase-2.md` goal); when one is built, these edits should be
+reconciled back into the source design session so the next re-export doesn't
+regress them. Reviewers evaluating Phase 2 stories against this constraint should
+treat loop-mediated, spec-cited, reviewed edits as compliant.
+
 
 ---
 
