@@ -1,0 +1,10 @@
+{
+  "story_id": "CONTENT-003",
+  "story_spec": "docs/stories/CONTENT/CONTENT-003.md",
+  "allowed_paths": [
+    "index.html",
+    "gap-handoff.html",
+    "docs/stories/CONTENT/CONTENT-003.md"
+  ],
+  "generated_at": "2026-07-16T16:28:43Z"
+}
