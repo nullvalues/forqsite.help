@@ -25,7 +25,6 @@ Be critical. Do not default to agreement.
 Report findings with file and line reference. Do not fix unless asked.
 
 ## Review checklist
-
 Run every item on every review invocation.
 
 1. PROTECTED FILES
@@ -49,7 +48,6 @@ Run every item on every review invocation.
    `docs/eras/**`), plus `README.md`. Projects may override with an explicit
    list in `docs/documentation-surface.md`.
    See `.claude/agents/reviewer.md` § 4 for the full discovery and judgement procedure.
-
 ## Review output format
 
 PASS / FAIL — [check name]

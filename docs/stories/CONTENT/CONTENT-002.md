@@ -2,7 +2,7 @@
 id: CONTENT-002
 rail: CONTENT
 title: Embellishments: add repo-grounded detail missing from the docs (E1-E8)
-status: draft
+status: complete
 phase: "2"
 auth_gated: false
 schema_introduces: false
