@@ -1,8 +1,7 @@
 {
   "permissions": {
     "deny": [
-      "Edit(docs/phases/permissions/**)",
-      "Write(docs/phases/permissions/**)"
+      "Edit(docs/phases/permissions/**)"
     ]
   },
   "hooks": {
