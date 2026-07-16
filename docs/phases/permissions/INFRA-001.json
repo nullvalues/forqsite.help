@@ -1,0 +1,9 @@
+{
+  "story_id": "INFRA-001",
+  "story_spec": "docs/stories/INFRA/INFRA-001.md",
+  "allowed_paths": [
+    "README.md",
+    "docs/stories/INFRA/INFRA-001.md"
+  ],
+  "generated_at": "2026-07-16T20:25:09Z"
+}
