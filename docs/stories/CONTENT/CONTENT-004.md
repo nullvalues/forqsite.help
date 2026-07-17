@@ -2,7 +2,7 @@
 id: CONTENT-004
 rail: CONTENT
 title: Prose decluttering pass: reduce em-dash overuse and repetitive phrasing
-status: draft
+status: complete
 phase: "2"
 auth_gated: false
 schema_introduces: false
