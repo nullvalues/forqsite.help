@@ -31,7 +31,7 @@ is built yet.
 | CONTENT-002 | Embellishments: add repo-grounded detail missing from the docs (E1-E8) | complete |
 | CONTENT-003 | UX fixes: hash routing, scroll reset, responsive layout, deep links, clipboard fallback (U1-U10) | complete |
 | CONTENT-004 | Prose decluttering pass: reduce em-dash overuse and repetitive phrasing | complete |
-| INFRA-001 | README.md: revisit generated-artifact/do-not-hand-edit framing for the refresh workflow | draft |
+| INFRA-001 | README.md: revisit generated-artifact/do-not-hand-edit framing for the refresh workflow | complete |
 
 ## Schema delivery
 

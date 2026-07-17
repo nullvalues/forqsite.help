@@ -2,7 +2,7 @@
 id: INFRA-001
 rail: INFRA
 title: README.md: revisit generated-artifact/do-not-hand-edit framing for the refresh workflow
-status: draft
+status: complete
 phase: "2"
 auth_gated: false
 schema_introduces: false
