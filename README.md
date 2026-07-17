@@ -9,8 +9,8 @@ the self-hosted, multi-tenant website builder.
 
 Every other forqsite property (including forqsite.com) is dogfooded as a tenant on a
 forqsite installation. **This site deliberately is not.** It is plain, self-contained
-HTML with zero runtime dependencies — no server, no database, no build step — so the
-docs stay available precisely when a forqsite instance is down and you need them most.
+HTML with zero runtime dependencies: no server, no database, no build step. The docs
+stay available even when a forqsite instance is down.
 
 ## Contents
 
