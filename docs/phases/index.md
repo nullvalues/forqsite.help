@@ -10,12 +10,12 @@ Each phase has a dedicated file in `docs/phases/`.
 - Checkpoint tags follow the same naming: `cp-<PRED>NNN-main`, etc.
 - Omit suffix for projects using sequential integer IDs.
 
-**Next to build:** [Phase 2: Refresh docs against forqsite drift](phase-2.md)
+**Next to build:** none scheduled — say "spec next phase [intent]" to plan one
 
 | Phase | Title | Status | Deferred from | Link |
 |-------|-------|--------|---------------|------|
 | 1 | Bootstrap pairmode methodology | complete | — | [phase-1.md](phase-1.md) |
-| 2 | Refresh docs against forqsite drift | planned | — | [phase-2.md](phase-2.md) |
+| 2 | Refresh docs against forqsite drift | complete | — | [phase-2.md](phase-2.md) |
 
 
 ## Backlog promotions
