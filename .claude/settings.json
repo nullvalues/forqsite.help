@@ -3,6 +3,10 @@
     "deny": [
       "Edit(docs/phases/permissions/**)",
       "Write(docs/phases/permissions/**)"
+    ],
+    "allow": [
+      "Bash(PATH=$HOME/.local/bin:$PATH uv run python /mnt/work/flex/skills/pairmode/scripts/flex_build.py permissions-create *)",
+      "Bash(PATH=$HOME/.local/bin:$PATH uv run python /mnt/work/flex/skills/pairmode/scripts/flex_build.py write-permissions *)"
     ]
   },
   "hooks": {
