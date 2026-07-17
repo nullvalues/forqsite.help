@@ -2,7 +2,7 @@
 id: CONTENT-003
 rail: CONTENT
 title: UX fixes: hash routing, scroll reset, responsive layout, deep links, clipboard fallback (U1-U10)
-status: draft
+status: complete
 phase: "2"
 auth_gated: false
 schema_introduces: false
