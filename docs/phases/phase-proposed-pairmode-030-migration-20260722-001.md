@@ -20,7 +20,7 @@ in-flight work here.
 Migrate this project from pairmode 0.2.0 to 0.3.0 (the Era 3 thin dispatch
 loop): run the 6-step per-project mechanic documented in flex-harness's
 `docs/harness-cutover-runbook.md` (§Per-project mechanic), using the
-canonical pairmode tooling at `/mnt/work/flex/skills/pairmode/scripts/`:
+canonical pairmode tooling at `/mnt/work/flex-harness/skills/pairmode/scripts/`:
 
 1. Confirm the working tree is at HEAD with no build attempt in flight.
 2. `pairmode_sync.py sync-all --project-dir . --dry-run` — review the diff.
