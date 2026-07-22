@@ -33,3 +33,4 @@ and this file is deleted (git history records the transit).
 
 | Proposed file | Title | Era |
 |---------------|-------|-----|
+| [phase-proposed-pairmode-030-migration-20260722-001.md](phase-proposed-pairmode-030-migration-20260722-001.md) | Migrate to pairmode 0.3.0 | — |
