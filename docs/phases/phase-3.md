@@ -22,6 +22,7 @@ Re-check the docs site against the current forqsite source repo (changed since t
 | ID | Title | Status |
 |----|-------|--------|
 | CONTENT-005 | Drift re-sweep: re-check index.html/gap-handoff.html against current forqsite source and fix drift | planned |
+| CONTENT-005 | Drift re-sweep: re-check index.html/gap-handoff.html against current forqsite source and fix drift | draft |
 
 ## Schema delivery
 
