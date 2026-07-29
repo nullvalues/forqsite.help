@@ -3,13 +3,13 @@
 > Stack: static HTML, no build step, no server, no database.
 
 ## Read before any task
-
 1. `docs/brief.md` — what and why (operator intent)
 2. `docs/architecture.md` — how and architectural decisions
 3. Current phase file from `docs/phases/` (see current phase for active stories); or `docs/phase-prompts.md` for legacy projects that have not migrated
 
 These three documents should be sufficient for any model or toolchain to cold-start this project and reproduce a valid variant without prior session context.
 
+Build sessions are governed by `CLAUDE.build.md`; all other input applies the reviewer role.
 ## Session modes
 
 **Build mode** — triggered by any of:
@@ -25,29 +25,8 @@ Be critical. Do not default to agreement.
 Report findings with file and line reference. Do not fix unless asked.
 
 ## Review checklist
-Run every item on every review invocation.
-
-1. PROTECTED FILES
-   Were any protected files modified without a stated reason?
-   Unexplained modification is HIGH.
-
-2. STORY SCOPE
-   Did the builder touch files outside the stated story scope?
-   Unexplained out-of-scope changes are MEDIUM.
-
-3. BUILD GATE
-   Does `none — static HTML, open file:// or serve with any static file server` pass without errors?
-   A failing build gate blocks story completion regardless of checklist outcome.
-
-4. DOCUMENTATION CURRENCY
-   Did this story touch code that any project doc describes? If yes, did the
-   story also update that doc? Stale documentation that no longer matches code
-   is HIGH — it actively misleads future agents reading it cold.
-   The project's documentation surface is every `*.md` under `docs/` excluding
-   append-only history paths (`docs/phases/**`, `docs/stories/**`, `docs/cer/**`,
-   `docs/eras/**`), plus `README.md`. Projects may override with an explicit
-   list in `docs/documentation-surface.md`.
-   See `.claude/agents/reviewer.md` § 4 for the full discovery and judgement procedure.
+Apply the checklist in the reviewer procedure skill.
+See `skills/pairmode/skills/reviewer/procedure.md`.
 ## Review output format
 
 PASS / FAIL — [check name]

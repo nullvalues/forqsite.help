@@ -1,8 +1,8 @@
 {
   "permissions": {
     "deny": [
-      "Edit(docs/phases/permissions/**)",
-      "Write(docs/phases/permissions/**)"
+      "Write(docs/phases/permissions/**)",
+      "Edit(docs/phases/permissions/**)"
     ],
     "allow": [
       "Bash(PATH=$HOME/.local/bin:$PATH uv run python /mnt/work/flex/skills/pairmode/scripts/flex_build.py permissions-create *)",
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run python /mnt/work/flex/hooks/pre_tool_use.py"
+            "command": "uv run python /mnt/work/flex-harness/hooks/pre_tool_use.py"
           }
         ]
       }
@@ -26,7 +26,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run python /mnt/work/flex/hooks/user_prompt_submit.py"
+            "command": "uv run python /mnt/work/flex-harness/hooks/user_prompt_submit.py"
           }
         ]
       }
@@ -36,7 +36,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run python /mnt/work/flex/hooks/session_start.py"
+            "command": "uv run python /mnt/work/flex-harness/hooks/session_start.py"
           }
         ]
       }
@@ -47,7 +47,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "uv run python /mnt/work/flex/hooks/post_tool_use.py"
+            "command": "uv run python /mnt/work/flex-harness/hooks/post_tool_use.py"
           }
         ]
       }
