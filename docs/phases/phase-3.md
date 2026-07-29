@@ -15,13 +15,12 @@ phase_class: production
 <!-- State this phase's single purpose in one or two sentences (docs/architecture.md
      § Phase-authoring convention, INFRA-243). If the work naturally splits into more
      than one purpose, that's a signal to open a sibling phase, not to widen this one. -->
-Re-check the docs site against the current forqsite source repo (changed since the 2026-07-22 phase-2 sync) and fix any content drift found. Serves as the RELEASE-066 proving cycle through the migrated 0.3.0 loop.
+Re-check the docs site against the current forqsite source repo (changed since the 2026-07-16 phase-2 sync baseline, forqsite@90b64b99) and fix any content drift found. Serves as the RELEASE-066 proving cycle through the migrated 0.3.0 loop.
 
 ## Stories
 
 | ID | Title | Status |
 |----|-------|--------|
-| CONTENT-005 | Drift re-sweep: re-check index.html/gap-handoff.html against current forqsite source and fix drift | planned |
 | CONTENT-005 | Drift re-sweep: re-check index.html/gap-handoff.html against current forqsite source and fix drift | draft |
 
 ## Schema delivery

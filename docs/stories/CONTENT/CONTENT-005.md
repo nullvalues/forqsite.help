@@ -8,6 +8,7 @@ story_class: code
 auth_gated: false
 schema_introduces: false
 test_gate: none
+primary_files: [index.html, gap-handoff.html]
 touches: []
 ---
 
