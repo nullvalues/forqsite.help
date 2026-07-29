@@ -2,7 +2,7 @@
 id: CONTENT-005
 rail: CONTENT
 title: Drift re-sweep: re-check index.html/gap-handoff.html against current forqsite source and fix drift
-status: draft
+status: complete
 phase: "3"
 story_class: code
 auth_gated: false
