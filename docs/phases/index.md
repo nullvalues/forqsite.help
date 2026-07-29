@@ -16,6 +16,7 @@ Each phase has a dedicated file in `docs/phases/`.
 |-------|-------|--------|---------------|------|
 | 1 | Bootstrap pairmode methodology | complete | — | [phase-1.md](phase-1.md) |
 | 2 | Refresh docs against forqsite drift | complete | — | [phase-2.md](phase-2.md) |
+| 3 | Drift re-sweep vs forqsite source (pairmode 0.3.0 proving cycle) | planned | [phase-3.md](phase-3.md) |
 
 
 ## Backlog promotions
