@@ -1,6 +1,6 @@
 # CLAUDE.md — forqsite.help
 
-> Stack: static HTML, no build step, no server, no database.
+> Stack: static HTML content (no build step); deployed behind a bind-mounted nginx:alpine container (no Dockerfile). No database.
 
 ## Read before any task
 1. `docs/brief.md` — what and why (operator intent)

@@ -1,0 +1,17 @@
+name: forqsite-help
+
+services:
+  forqsite-help:
+    image: nginx:alpine
+    container_name: forqsite-help
+    restart: unless-stopped
+    networks:
+      - edge
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+      - ./gap-handoff.html:/usr/share/nginx/html/gap-handoff.html:ro
+
+networks:
+  edge:
+    external: true

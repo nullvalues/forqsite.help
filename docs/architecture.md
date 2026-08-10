@@ -3,8 +3,13 @@
 ## What forqsite.help is
 
 Two static HTML bundles — `index.html` (the main docs site) and `gap-handoff.html`
-(the gap/handoff tracker) — plus `README.md`. No server, no database, no build step;
-open either file directly (`file://`) or serve with any static file server.
+(the gap/handoff tracker) — plus `README.md`. Content authoring has no build step (the
+bundles are hand/session-generated, not compiled); the files can still be opened
+directly (`file://`) for local editing/preview. The deployed artifact, however, runs
+behind a minimal `nginx:alpine` container (see Deployment below) — per FORQSITEHELP-001
+in the sibling `caddy` repo, edge Caddy only ever does `reverse_proxy`, never a direct
+file-system mount into the shared ingress container, so this project containerizes
+rather than relying on Caddy's `file_server`. No database, regardless.
 
 This document is the source of truth for the forqsite.help codebase. Read it before any task.
 
@@ -12,7 +17,9 @@ This document is the source of truth for the forqsite.help codebase. Read it bef
 
 ## Stack
 
-static HTML, no build step, no server, no database
+static HTML content (no build step for the content itself); deployed behind
+`nginx:alpine` (bind-mounted static files + config, no Dockerfile, no build step for
+the deployment either); no database
 
 ---
 
@@ -28,8 +35,22 @@ static HTML, no build step, no server, no database
 forqsite.help/
 ├── index.html          # main docs site (self-unpacking bundle)
 ├── gap-handoff.html    # gap/handoff tracker (self-unpacking bundle)
+├── docker-compose.yml  # nginx:alpine container, bind-mounts the two files above
+├── nginx.conf          # listens on :6000 (matches caddy's port-registry.md assignment)
 └── README.md
 ```
+
+## Deployment
+
+INFRA-002 (phase 4) containerized this project: `docker-compose.yml` runs
+`nginx:alpine` as container `forqsite-help`, joined to the external `edge` Docker
+network, with `nginx.conf`, `index.html`, and `gap-handoff.html` bind-mounted
+read-only — no Dockerfile, no image build. No host ports are published; the sibling
+`caddy` repo's `sites/forqsite-help.caddy` reverse-proxies `forqsite.help` ->
+`forqsite-help:6000` over that shared network. Deployed alongside caddy on kw-pub61 at
+`/srv/forqsite-help`, mirroring caddy's own `/srv/edge` convention — required since
+Docker's embedded DNS resolution for the `edge` network only works within a single
+Docker host.
 
 Both HTML files are self-unpacking bundles: a `<script type="__bundler/template">`
 tag contains a JSON-encoded HTML string. The unpacked HTML embeds a `DCLogic` class
