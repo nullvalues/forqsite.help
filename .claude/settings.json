@@ -4,52 +4,14 @@
       "Edit(docs/phases/permissions/**)"
     ],
     "allow": [
-      "Bash(PATH=$HOME/.local/bin:$PATH uv run python ~/flex-marketplace-cache/flex-0.4.2/skills/pairmode/scripts/flex_build.py permissions-create *)",
-      "Bash(PATH=$HOME/.local/bin:$PATH uv run python ~/flex-marketplace-cache/flex-0.4.2/skills/pairmode/scripts/flex_build.py write-permissions *)"
+      "Bash(PATH=$HOME/.local/bin:$PATH uv run python ~/flex-marketplace-cache/flex-0.4.3/skills/pairmode/scripts/flex_build.py permissions-create *)",
+      "Bash(PATH=$HOME/.local/bin:$PATH uv run python ~/flex-marketplace-cache/flex-0.4.3/skills/pairmode/scripts/flex_build.py write-permissions *)"
     ]
   },
   "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Task|Agent|Edit|Write|Read",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run python ~/flex-marketplace-cache/flex-0.4.2/hooks/pre_tool_use.py"
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run python ~/flex-marketplace-cache/flex-0.4.2/hooks/user_prompt_submit.py"
-          }
-        ]
-      }
-    ],
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run python ~/flex-marketplace-cache/flex-0.4.2/hooks/session_start.py"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Task|Agent",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "uv run python ~/flex-marketplace-cache/flex-0.4.2/hooks/post_tool_use.py"
-          }
-        ]
-      }
-    ]
+    "PreToolUse": [],
+    "UserPromptSubmit": [],
+    "SessionStart": [],
+    "PostToolUse": []
   }
 }
