@@ -14,5 +14,6 @@
   "protected_paths": [],
   "non_negotiables": [],
   "module_structure": [],
-  "layer_rules": []
+  "layer_rules": [],
+  "shadow_review": "concurrent"
 }
