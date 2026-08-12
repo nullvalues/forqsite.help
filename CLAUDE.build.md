@@ -1,10 +1,10 @@
 # CLAUDE.build.md — forqsite.help Build Orchestrator
 
 You are the build orchestrator for the forqsite.help project. Drive the build loop by
-delegating to `/mnt/work/flex-harness/skills/pairmode/scripts/flex_build.py next-action` and the appropriate leaf worker. Do not write code,
+delegating to `~/flex-marketplace-cache/flex-0.4.2/skills/pairmode/scripts/flex_build.py next-action` and the appropriate leaf worker. Do not write code,
 review code, or commit directly — those are leaf-worker responsibilities.
 
-pairmode_scripts_dir = /mnt/work/flex-harness/skills/pairmode/scripts
+pairmode_scripts_dir = ~/flex-marketplace-cache/flex-0.4.2/skills/pairmode/scripts
 
 ## Build loop
 
@@ -16,13 +16,13 @@ ACTION_SUBAGENT_TYPE = {spawn-builder: builder, spawn-reviewer: reviewer, spawn-
 
 ```
 while true:
-    a = /mnt/work/flex-harness/skills/pairmode/scripts/flex_build.py next-action --json --project-dir .
+    a = ~/flex-marketplace-cache/flex-0.4.2/skills/pairmode/scripts/flex_build.py next-action --json --project-dir .
     if a.action == "done": break
     if a.action is a story-build action (spawn-builder / spawn-reviewer):
-        wt = /mnt/work/flex-harness/skills/pairmode/scripts/flex_build.py create-story-worktree --story-id a.scalar --project-dir .  # also stamps current_story + generates docs/phases/permissions/<scalar>.json (INFRA-238)
+        wt = ~/flex-marketplace-cache/flex-0.4.2/skills/pairmode/scripts/flex_build.py create-story-worktree --story-id a.scalar --project-dir .  # also stamps current_story + generates docs/phases/permissions/<scalar>.json (INFRA-238)
         spawn leaf-worker-for(a.action) with subagent_type=ACTION_SUBAGENT_TYPE[a.action], scalar=a.scalar, model=a.model, cwd=wt
-        on reviewer PASS: /mnt/work/flex-harness/skills/pairmode/scripts/flex_build.py merge-story-worktree --story-id a.scalar --project-dir .  # also clears the attempt counter (INFRA-237) and the current_story/permissions stamps (INFRA-238)
-        on reviewer FAIL: /mnt/work/flex-harness/skills/pairmode/scripts/flex_build.py discard-story-worktree --story-id a.scalar --project-dir .  # also clears the current_story/permissions stamps (INFRA-238)
+        on reviewer PASS: ~/flex-marketplace-cache/flex-0.4.2/skills/pairmode/scripts/flex_build.py merge-story-worktree --story-id a.scalar --project-dir .  # also clears the attempt counter (INFRA-237) and the current_story/permissions stamps (INFRA-238)
+        on reviewer FAIL: ~/flex-marketplace-cache/flex-0.4.2/skills/pairmode/scripts/flex_build.py discard-story-worktree --story-id a.scalar --project-dir .  # also clears the current_story/permissions stamps (INFRA-238)
     else:
         spawn leaf-worker-for(a.action) with subagent_type=ACTION_SUBAGENT_TYPE[a.action], scalar=a.scalar, model=a.model
     # effort-attempt recording AND the attempt counter are both fully hook-side
@@ -44,8 +44,8 @@ input) so the operator can key in any model name — the `model_selector.py` tie
 ## Checkpoint
 
 Execute each checkpoint leaf worker as dispatched. After each returns, call:
-  /mnt/work/flex-harness/skills/pairmode/scripts/flex_build.py record-checkpoint-step <action> --project-dir . --phase-key <phase-key>
-After the three gate workers complete, call `/mnt/work/flex-harness/skills/pairmode/scripts/flex_build.py checkpoint-report --project-dir .` and print its output verbatim (cost rollup + next-phase pointer) before checkpoint-tag. Then re-run next-action. checkpoint-tag (mandated order, CER-083): 1) `record-checkpoint-step checkpoint-tag --project-dir . --phase-key <phase-key>` (resets checkpoint_step; marks the phase complete in `docs/phases/index.md` **and** flips its row in the active `docs/eras/` doc's phase ledger, INFRA-267), then commit both paths — `git add docs/phases/index.md docs/eras/` — before tagging; 2) `git tag cp-<phase-key> && git push origin main --tags`. A raw `git tag` alone, skipping step 1, is forbidden: `record-checkpoint-step` is idempotent and safely re-runnable if step 2 fails after it, but if the order reverses, step 1's skip is silent and the next phase's gates are lost. `--phase-key <phase-key>` on every call is what stops the wrong phase being marked complete (CER-077): it is the explicit source of truth `record-checkpoint-step`'s precedence chain checks first, ahead of any re-derivation from `docs/phases/index.md`.
+  ~/flex-marketplace-cache/flex-0.4.2/skills/pairmode/scripts/flex_build.py record-checkpoint-step <action> --project-dir . --phase-key <phase-key>
+After the three gate workers complete, call `~/flex-marketplace-cache/flex-0.4.2/skills/pairmode/scripts/flex_build.py checkpoint-report --project-dir .` and print its output verbatim (cost rollup + next-phase pointer) before checkpoint-tag. Then re-run next-action. checkpoint-tag (mandated order, CER-083): 1) `record-checkpoint-step checkpoint-tag --project-dir . --phase-key <phase-key>` (resets checkpoint_step; marks the phase complete in `docs/phases/index.md` **and** flips its row in the active `docs/eras/` doc's phase ledger, INFRA-267), then commit both paths — `git add docs/phases/index.md docs/eras/` — before tagging; 2) `git tag cp-<phase-key> && git push origin main --tags`. A raw `git tag` alone, skipping step 1, is forbidden: `record-checkpoint-step` is idempotent and safely re-runnable if step 2 fails after it, but if the order reverses, step 1's skip is silent and the next phase's gates are lost. `--phase-key <phase-key>` on every call is what stops the wrong phase being marked complete (CER-077): it is the explicit source of truth `record-checkpoint-step`'s precedence chain checks first, ahead of any re-derivation from `docs/phases/index.md`.
 
 **Build standards** (per-project facts the builder/reviewer procedure skills read from here instead of hardcoding, INFRA-240): test_command=`none — static HTML, open file:// or serve with any static file server` | test_dir=`tests/` | protected_paths=`(none)` | domain_isolation_rule=`(none)`
 
