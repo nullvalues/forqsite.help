@@ -1,5 +1,5 @@
 {
-  "pairmode_version": "0.4.5",
+  "pairmode_version": "0.4.6",
   "effort_tracking": true,
   "context_budget_threshold": 120000,
   "context_budget_overrun_pct": 0.1,
@@ -17,7 +17,7 @@
   "context_budget_acknowledged_at": 25000,
   "context_budget_acknowledged_user_turn_seq": 28,
   "context_budget_user_turn_seq_fingerprint": "f6eeedfd0026a5d93bc85d0b5b3e3c9f5c001f21042a4b8103b7c0293efc60c1",
-  "agent_surfaces_written_at": "2026-08-15T17:20:38.755223+00:00",
+  "agent_surfaces_written_at": "2026-08-17T17:17:24.590730+00:00",
   "agent_surfaces_written_by": "rewrite",
   "shadow_review": "concurrent"
 }
