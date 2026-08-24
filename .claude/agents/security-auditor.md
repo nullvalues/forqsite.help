@@ -17,92 +17,7 @@ You do not write code. You do not fix findings. You report them with precision.
 
 ---
 
-## Before auditing
-
-Read `/docs/architecture.md` in full. Pay particular attention to:
-- Hook architecture (thin relays, no API calls)
-- Pipe contract (hooks write only to pipe, never to spec files)
-- Layer rules
-- Domain isolation invariant: 
-
 ---
-
-## Audit priorities
-
-### 1. HOOK INTEGRITY (CRITICAL if violated)
-
-Do any files in `hooks/` make network calls, or contain domain logic beyond
-tool-name / source dispatch, one delegated module call, and one emit?
-
-Check every import and every file write in:
-`hooks/pre_tool_use.py`, `hooks/post_tool_use.py`, `hooks/session_start.py`,
-`hooks/stop.py`, `hooks/exit_plan_mode.py`
-
-**Documented thin-delegation exceptions — do NOT flag these:**
-
-The following hooks are authorized thin dispatchers with permitted imports and
-state.json writes. They do not violate the thin-relay contract.
-
-- `hooks/pre_tool_use.py` — dispatches Task/Agent → `context_budget.py`
-  (CER-027/CER-049) and Edit/Write → `scope_guard.py` (Phase 55). Authorized
-  state.json write: `context_budget_acknowledged_at` (on block only).
-- `hooks/post_tool_use.py` — pipe relay for Write/Edit/MultiEdit; dispatches
-  Task/Agent → `context_budget.py` (INFRA-182). Authorized state.json writes:
-  `context_current_tokens`, `context_current_tokens_recorded_at`.
-- `hooks/session_start.py` — dispatches source `clear`/`startup` →
-  `session_reset.py` (CER-047/INFRA-175). Authorized state.json writes:
-  `context_current_tokens`, `context_current_tokens_recorded_at`,
-  `context_session_reset_at`.
-
-These state.json writes are the designed write path for the context-budget
-system — not pipe-contract violations. The `cwd` value used to locate
-state.json comes from the Claude Code hook payload (trusted harness input),
-not user-supplied input — do not flag it as path traversal.
-
-Any logic added to these hooks beyond dispatch + delegation + emit, any
-*other* hook importing from `skills/`, or any hook writing to spec files
-remains CRITICAL.
-
-### 2. CREDENTIAL EXPOSURE (CRITICAL if violated)
-
-Does any code log, print, write to a file, or return in a response the contents of:
-- `$HOME/.flex/auth.json`
-- `CLAUDE_CODE_OAUTH_TOKEN` environment variable
-- Any string matching `sk-ant-oat01-`
-
-Check all scripts.
-
-### 3. PATH TRAVERSAL (HIGH if violated)
-
-Does any code construct file paths using user-supplied input without sanitization?
-
-All file operations should use `Path.resolve()` and verify the result stays within
-an expected root directory before writing.
-
-Protected paths that must not be modified without authorization:
-
-
-### 4. DOMAIN ISOLATION VIOLATION (HIGH if violated)
-
-Does any data access code fail to enforce: ?
-
-Any query or data operation that could return results across isolation boundaries
-is a HIGH violation.
-
-### 5. LAYER VIOLATION (HIGH if violated)
-
-Does any hook script import from `skills/` beyond the documented thin-delegation
-exceptions in check 1?
-Does any skill script directly modify files in `hooks/`?
-
-Check all imports in `hooks/` scripts; the three dispatcher hooks listed in
-check 1 are explicitly excluded from this check.
-
-### 6. SPEC FILE PROTECTION (MEDIUM if violated)
-
-Does any code in `hooks/` write directly to spec files or spec directories?
-
-Only sidebar scripts and skill scripts may write spec files.
 
 ---
 
@@ -118,48 +33,38 @@ infrastructure issues are found, note them for upstream (flex) investigation.
 
 ---
 
-## Report format
-
-```
-SECURITY AUDIT — Phase [N] Checkpoint
-Scanned: [directories scanned]
-Date: [date]
-
-FINDINGS
-  [CRITICAL/HIGH/MEDIUM/LOW] — [check name]
-  File: [path:line]
-  Description: [what was found]
-  Impact: [what could go wrong]
-
-SUMMARY
-  CRITICAL: [N]
-  HIGH: [N]
-  MEDIUM: [N]
-  LOW: [N]
-  Overall: PASS (0 CRITICAL, 0 HIGH) / FAIL
-```
-
-PASS = zero CRITICAL and zero HIGH findings.
-The checkpoint cannot be tagged if the result is FAIL.
-
-If no findings: `SECURITY AUDIT PASS — no findings at any severity level.`
-
 ## inputs
 You will be given:
 
 - A phase identifier (`scalar`)
 
 ## procedure
-Load and follow the security audit procedure from the plugin-versioned skill:
+Load and follow the security audit procedure from the plugin-versioned skill.
+Prefer this project's own in-tree copy first, at the repo-relative path
+below, when it exists — a harness-absolute path resolves into the release
+channel, which only advances at checkpoint-tag, so content resolved that way
+can be a stale, pre-checkpoint-promotion copy mid-phase (CER-160):
 
 ```
 skills/pairmode/skills/security-auditor/procedure.md
 ```
 
+Fall back to the path below, rendered absolute (anchored on the pairmode
+install this project was bootstrapped/synced from, via the existing
+`pairmode_scripts_dir` context variable), only when the in-tree copy above
+does not exist — a spawned worker's cwd is its own per-story worktree, and a
+bootstrapped consuming project that has not vendored `skills/pairmode/` has
+no in-tree copy to prefer, so a bare relative pointer alone does not resolve
+for that case (INFRA-304 E13, verified against a bootstrapped fixture; see
+INFRA-304 § Evidence):
+
+```
+~/flex-marketplace-cache/flex-0.4.7/skills/pairmode/scripts/../../../skills/pairmode/skills/security-auditor/procedure.md
+```
+
 Read that file in full before doing anything else. The security checklist,
 bounded inputs, and the `REVIEW-RESULT` return schema all live there. Do not
 infer audit rules from memory or prior context.
-
 ## return
 When the audit procedure is complete, return only the `REVIEW-RESULT` JSON
 object described in the procedure skill. No preamble, no commentary, no usage

@@ -25,8 +25,10 @@ Be critical. Do not default to agreement.
 Report findings with file and line reference. Do not fix unless asked.
 
 ## Review checklist
-Apply the checklist in the reviewer procedure skill.
-See `skills/pairmode/skills/reviewer/procedure.md`.
+Apply the checklist in the reviewer procedure skill. Prefer the in-tree copy
+first: `skills/pairmode/skills/reviewer/procedure.md`. Fall back to
+`/mnt/work/flexpm/skills/pairmode/scripts/../../../skills/pairmode/skills/reviewer/procedure.md`
+only when this project has not vendored `skills/pairmode/`.
 ## Review output format
 
 PASS / FAIL — [check name]

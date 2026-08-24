@@ -29,7 +29,6 @@ You will be given:
 ---
 
 ## Procedure
-
 Load and follow the spec-writing procedure from the plugin-versioned skill.
 Prefer this project's own in-tree copy first, at the repo-relative path
 below, when it exists — a harness-absolute path resolves into the release
@@ -50,7 +49,7 @@ for that case (INFRA-304 E13, verified against a bootstrapped fixture; see
 INFRA-304 § Evidence):
 
 ```
-~/flex-marketplace-cache/flex-0.4.6/skills/pairmode/scripts/../../../skills/pairmode/skills/spec-writer/procedure.md
+~/flex-marketplace-cache/flex-0.4.7/skills/pairmode/scripts/../../../skills/pairmode/skills/spec-writer/procedure.md
 ```
 
 Read that file in full before doing anything else. The bounded input
@@ -58,9 +57,6 @@ contract (stub story file, phase doc, active era doc, one format exemplar,
 `docs/ideology.md`), the elaboration steps, and the `SPEC-RESULT` return
 schema all live there. Do not infer elaboration rules from memory or prior
 context.
-
----
-
 ## Return
 
 When the spec-writing procedure is complete, return only the `SPEC-RESULT`

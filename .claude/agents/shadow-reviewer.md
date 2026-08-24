@@ -29,7 +29,6 @@ You will be given:
 ---
 
 ## Procedure
-
 Load and follow the shadow-review procedure from the plugin-versioned skill.
 Prefer this project's own in-tree copy first, at the repo-relative path
 below, when it exists — a harness-absolute path resolves into the release
@@ -50,15 +49,12 @@ for that case (INFRA-304 E13, verified against a bootstrapped fixture; see
 INFRA-304 § Evidence):
 
 ```
-~/flex-marketplace-cache/flex-0.4.6/skills/pairmode/scripts/../../../skills/pairmode/skills/shadow-reviewer/procedure.md
+~/flex-marketplace-cache/flex-0.4.7/skills/pairmode/scripts/../../../skills/pairmode/skills/shadow-reviewer/procedure.md
 ```
 
 Read that file in full before doing anything else. The suggestions-file
 convention, poll cadence, and stop condition all live there. Do not infer the
 protocol from memory or prior context.
-
----
-
 ## Return
 
 When the stop condition is reached, return only the `SHADOW-RESULT` JSON
