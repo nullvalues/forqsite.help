@@ -1,7 +1,7 @@
 <!-- FROZEN EXEMPLAR (INFRA-363). This file is the spec-writer procedure's bounded
      input 4 (`skills/pairmode/skills/spec-writer/procedure.md` § Input contract,
      item 4 — repo-relative; fall back to
-     `/mnt/work/flexpm/skills/pairmode/scripts/../../../skills/pairmode/skills/spec-writer/procedure.md`
+     `~/flex-marketplace-cache/flex-0.4.7/skills/pairmode/scripts/../../../skills/pairmode/skills/spec-writer/procedure.md`
      in a project that has not vendored `skills/`, INFRA-527/INFRA-528). It replaces
      the old "one recent complete story" rotating exemplar,
      which was self-reinforcing: today's longest spec became tomorrow's format
