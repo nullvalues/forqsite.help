@@ -97,7 +97,7 @@ a correction notice, and Phase 6 added it for a good reason.
 
 | ID | Title | Status |
 |----|-------|--------|
-| CONTENT-013 | Reframe the gap document for a human self-hoster; retire the Claude Code framing | complete |
+| CONTENT-013 | Reframe the gap document for a human self-hoster; retire the Claude Code framing; lift the sequencing advice to a TL;DR | complete |
 | CONTENT-014 | Strip correction notices and comparative phrasing from the docs site | complete |
 | CONTENT-015 | Re-point every cross-reference to the renamed document | complete |
 

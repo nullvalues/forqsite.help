@@ -62,3 +62,17 @@ commit after each, cold-eyes review before calling the phase done" — replaced
 with the one caution that actually generalises: 003, 004 and 005 change
 operator-facing behaviour, so each needs the four operator documents updated with
 it or the next person reads the old answer.
+
+## Follow-up: the sequencing block became the TL;DR
+
+The ordering advice sat at the bottom of the page as a wall of prose in a black
+panel, after eight full write-ups — which is exactly where a reader who needs it
+most will never reach. It is a summary, so it belongs where a summary goes.
+
+Moved above the priority chips, relabelled **TL;DR**, and broken into bullets:
+one per grouping (003+004+005, 007, 006/008, 009/010), with the
+documentation-surface caution set off below a rule rather than buried in the
+final clause of a paragraph.
+
+Same content, same panel styling. It is now readable in about five seconds,
+which is the only thing a TL;DR has to be.
