@@ -17,7 +17,7 @@ stay available even when a forqsite instance is down.
 | File | What it is |
 |---|---|
 | `index.html` | The docs site. Builders (dev setup, daily runbook), self-hosters (non-docker production install, systemd supervision, operations, backup & recovery, provider lifecycle), and reference (searchable env-var table, architecture/topology, dev→prod pipeline map). |
-| `gap-handoff.html` | Dev → prod gap analysis formatted as Claude Code work items (GAP-003…010, 8 items) with evidence, proposed approach, and acceptance criteria. Linked from the docs sidebar. GAP-002 and GAP-011 were verified resolved against the source and pruned in Phase 5. |
+| `gap-handoff.html` | Known gaps between the dev environment and an operable production deployment (GAP-003…010, 8 items): what a self-hoster will hit, where to look, how to fix it, and how to tell when it is fixed. Linked from the docs sidebar. |
 
 Each file is a single fully-inlined HTML document (fonts, styles, and scripts embedded).
 They work offline, from `file://`, or behind any static file server.

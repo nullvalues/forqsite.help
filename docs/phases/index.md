@@ -20,6 +20,7 @@ Each phase has a dedicated file in `docs/phases/`.
 | 4 | Containerize for edge deployment | complete | — | [phase-4.md](phase-4.md) |
 | 5 | SDK 5.0.0 and the generated-registry ingestion path | complete | — | [phase-5.md](phase-5.md) |
 | 6 | Full structural back-check, and a verification stamp | complete | — | [phase-6.md](phase-6.md) |
+| 7 | Write for the reader, not about the work | complete | — | [phase-7.md](phase-7.md) |
 
 
 ## Backlog promotions
