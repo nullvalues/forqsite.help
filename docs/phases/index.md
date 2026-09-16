@@ -19,6 +19,7 @@ Each phase has a dedicated file in `docs/phases/`.
 | 3 | Drift re-sweep vs forqsite source (pairmode 0.3.0 proving cycle) | complete | — | [phase-3.md](phase-3.md) |
 | 4 | Containerize for edge deployment | complete | — | [phase-4.md](phase-4.md) |
 | 5 | SDK 5.0.0 and the generated-registry ingestion path | complete | — | [phase-5.md](phase-5.md) |
+| 6 | Full structural back-check, and a verification stamp | complete | — | [phase-6.md](phase-6.md) |
 
 
 ## Backlog promotions
