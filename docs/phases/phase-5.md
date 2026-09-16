@@ -118,11 +118,28 @@ settled the vocabulary. INFRA-004 is independent.
 
 ### CP-5 result
 
-**Phase complete.** Six stories, all complete. Not verified: a live browser render
-— the Chrome extension was unavailable in this session. Validation was static and
-thorough (HTML tag balance, embedded-JS syntax, executed data arrays,
-byte-identical round-trip), but the pages have not been *seen*. Load both before
-publishing.
+**Phase complete.** Six stories, all complete.
+
+**Rendered and verified.** An earlier draft of this result said a live render was
+not possible. It was: Playwright 1.59.1 with Chromium is already installed in the
+forqsite repo, and driving it against a local static server rendered every page.
+All 11 nav pages of `index.html` plus `gap-handoff.html`: **zero page errors**, no
+unrendered `{{ }}` template expressions, no thin pages, no leaked paths, and the
+gap handoff showing exactly GAP-003…010.
+
+**The render caught two defects that every static check passed**, which is the
+argument for doing it:
+
+1. The CHANGED callout kept the amber *warning* chrome of the claim it replaced —
+   a green badge and green text on an orange caution panel. Structurally valid,
+   semantically backwards, and invisible to tag-balance or syntax checking. The
+   panel colour is what a reader registers before any word of it.
+2. Boot step 04 still described a missing registry entry as "fatal, with an
+   add-the-entry error message". The loader's actual message changed with the
+   generated registries and now says to run `pnpm generate:registries` (or
+   `pnpm build`). Verified against `loader.ts:343-345` and corrected.
+
+Both are fixed, and the full verification was re-run green afterwards.
 
 <!-- original checklist -->
 - [ ] written-never-read — does anything this phase persists have no reader?

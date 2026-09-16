@@ -48,3 +48,20 @@ gap-handoff.html: OK — round-trip is byte-identical (37,953 chars)
 
 A no-op extract→inject cycle on `index.html` was also run and `cmp` confirmed the
 file was unchanged, byte for byte.
+
+
+## Render verification (added after the first pass)
+
+Static validation is necessary and not sufficient. Playwright 1.59.1 and Chromium
+are already present in the forqsite repo, so no harness needed scaffolding — the
+browser binary had to be passed explicitly (`chromium-1223` in the cache against a
+Playwright expecting `1217`), and a local `python3 -m http.server` served the two
+files.
+
+Every nav page was clicked through and asserted on: no page errors, no unrendered
+`{{ }}` expressions, no page under 800 characters, no leaked internal path, and
+the eleven content claims this phase had to get right.
+
+It caught two defects that tag-balance, JS syntax and array evaluation all passed
+— a callout whose panel colour contradicted its own text, and a stale error
+message in a data array. Neither is reachable without looking at the page.
