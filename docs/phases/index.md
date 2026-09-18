@@ -21,6 +21,7 @@ Each phase has a dedicated file in `docs/phases/`.
 | 5 | SDK 5.0.0 and the generated-registry ingestion path | complete | — | [phase-5.md](phase-5.md) |
 | 6 | Full structural back-check, and a verification stamp | complete | — | [phase-6.md](phase-6.md) |
 | 7 | Write for the reader, not about the work | complete | — | [phase-7.md](phase-7.md) |
+| 8 | The promotion path, and what a pack may carry | planned | — | [phase-8.md](phase-8.md) |
 
 
 ## Backlog promotions
