@@ -29,3 +29,4 @@ static site that survives a forqsite outage — and track the dev→prod gap bac
 | 1 | Bootstrap pairmode methodology | planned |
 | 2 | Refresh docs against forqsite drift | planned |
 | 3 | Drift re-sweep vs forqsite source (pairmode 0.3.0 proving cycle) | planned |
+| 8 | The promotion path, and what a pack may carry | planned |

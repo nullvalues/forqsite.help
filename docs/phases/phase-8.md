@@ -87,10 +87,10 @@ they can throw away — not a second server.
 
 | ID | Title | Status |
 |----|-------|--------|
-| CONTENT-016 | Add a "Promoting a change" section: the three streams, the environment roles, the lane diagram, and which collapses are safe | planned |
-| CONTENT-017 | Rewrite "Provider packs (condensed)" to state the ceiling — what a pack may store, and why installing one needs a rebuild | planned |
-| CONTENT-018 | Add the expand-and-contract rule to "Day-two runbook → Upgrade", derived from the rolling-restart topology the site already recommends | planned |
-| CONTENT-019 | Record the content-migration gap as a new numbered entry in Known gaps | planned |
+| CONTENT-016 | Add a Promoting a change section: the three streams, the environment roles, the lane diagram, and which collapses are safe | draft |
+| CONTENT-017 | Rewrite Provider packs (condensed) to state the ceiling on what a pack may store and why installing one needs a rebuild | draft |
+| CONTENT-018 | Add the expand-and-contract rule to Day-two runbook Upgrade, derived from the rolling-restart topology | draft |
+| CONTENT-019 | Record the content-migration gap as a new numbered entry in Known gaps | draft |
 
 ### CONTENT-016 — Promoting a change
 
