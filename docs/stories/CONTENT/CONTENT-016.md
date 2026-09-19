@@ -2,7 +2,7 @@
 id: CONTENT-016
 rail: CONTENT
 title: Add a Promoting a change section: the three streams, the environment roles, the lane diagram, and which collapses are safe
-status: draft
+status: complete
 phase: "8"
 story_class: doc
 auth_gated: false
