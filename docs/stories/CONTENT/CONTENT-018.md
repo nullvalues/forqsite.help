@@ -2,7 +2,7 @@
 id: CONTENT-018
 rail: CONTENT
 title: Add the expand-and-contract rule to Day-two runbook Upgrade, derived from the rolling-restart topology
-status: draft
+status: complete
 phase: "8"
 story_class: doc
 auth_gated: false
