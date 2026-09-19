@@ -2,7 +2,7 @@
 id: CONTENT-017
 rail: CONTENT
 title: Rewrite Provider packs (condensed) to state the ceiling on what a pack may store and why installing one needs a rebuild
-status: draft
+status: complete
 phase: "8"
 story_class: doc
 auth_gated: false
