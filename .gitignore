@@ -1,2 +1,15 @@
 .claude/story_scope.json
 .claude/settings.local.json
+
+# Flex/pairmode runtime (matches flex's own .gitignore convention).
+# .companion/ telemetry (effort.db, state.json, pairmode_context.json) is
+# rewritten by every build-loop run; tracking it dirties the main checkout and
+# makes merge-story-worktree's CER-288 guard refuse every story merge.
+.companion/
+.pairmode-worktrees/
+.pairmode-suggestions.md
+.pairmode-review.lck
+.pairmode-review-request
+
+# Local settings backups
+.claude/*.bak-*
