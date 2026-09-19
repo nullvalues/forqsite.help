@@ -2,7 +2,7 @@
 id: CONTENT-019
 rail: CONTENT
 title: Record the content-migration gap as a new numbered entry in Known gaps
-status: draft
+status: complete
 phase: "8"
 story_class: doc
 auth_gated: false
