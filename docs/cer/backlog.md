@@ -1,10 +1,12 @@
 # forqsite.help — Cold-Eyes Review (CER) Backlog
 
-*Last updated: 2026-07-16*
+*Last updated: 2026-09-21*
 
 This file is the structured triage log for findings from external cold-eyes reviews.
 Each finding is assigned to one quadrant. Findings are not deleted — resolved findings
-remain in place with a resolution note.
+remain in place with a resolution marker.
+
+A **resolution marker** closes a finding by placing one of three keywords at the start of an annotation segment. The keywords are `RESOLVED`, `SUPERSEDED`, and `OBSOLETE` (case-insensitive: `resolved`, `Resolved`, `RESOLVED` all match). An annotation segment begins at the start of text, after a `|` table cell boundary, after sentence-ending punctuation followed by whitespace, or at an emphasis or bracket opener (`**`, `(`, `[`). Accepted forms include `**RESOLVED Phase 10 — INFRA-1**` (bolded), `| Resolved cp-10 — INFRA-1 |` (after a cell boundary), `**SUPERSEDED by CER-001**`, and `**OBSOLETE — disproved**`. A keyword appearing mid-clause — preceded by a space and a word — is not a marker and leaves the finding open; `this should be resolved before cp-10` and `UNRESOLVED naming gap` do not close. The `cer-do-now` checkpoint guard (a harness rule, not defined in this repo) scans this marker form to enforce that all Do Now findings are either marked closed or re-triaged before each checkpoint.
 
 ---
 
