@@ -168,6 +168,28 @@ a finding can cite its subject by class ("the Docker host that runs the edge pro
 verification record can do the same ("from the deployment host"), so naming the instance is
 not required — only permitted. Prefer the class form when both are possible.
 
+### Cite the source that makes a claim checkable
+
+**Rule:** A published claim about forqsite's behaviour carries its evidence — the
+forqsite source `path:line` it was read from and the `repo@commit` it was checked at —
+and that evidence is published as written. Citations are not stripped as internal
+detail.
+
+**Protects:** The reader's ability to verify a claim against their own installation
+instead of trusting the page, and the site's own defence against silent drift (a
+citation that no longer matches is a detectable failure; an uncited assertion is not).
+
+**Rationale:** The audience self-hosts forqsite, so the cited tree is the reader's own
+source tree, not a third party's internals. Recording the ruling is the point: the
+question was raised at the Phase 8 security gate (CER-002) and will be raised again at
+every gate unless the answer is written where a reviewer reads it.
+
+**Override path:** A citation is dropped only when the claim it supports is removed.
+
+This constraint governs the product's source tree, which the reader also has; "Name
+the class, not the instance" governs our own deployment, and nothing here grants a
+host name, an absolute path or a machine name of ours any publication right.
+
 
 ---
 

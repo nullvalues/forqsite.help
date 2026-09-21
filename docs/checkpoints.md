@@ -48,8 +48,16 @@ reason.
 **Phases 3-7 have no entry here and no tag.** From Phase 3 until Phase 8, the build-gate
 guard shelled out `test_command`, which held a prose description rather than a runnable
 command, and failed red (exit 127) on every checkpoint attempt. Those phases were marked
-complete in `docs/phases/index.md` without ever passing a green gate. Whether to
-back-tag them is an open operator question.
+complete in `docs/phases/index.md` without ever passing a green gate. The operator
+ruled, on 2026-09-21 (CONTENT-026), that they stay untagged: a `cp-<N>` tag asserts
+the checkpoint sequence passed, and for these phases it did not — back-tagging would
+record a gate result that was never obtained, making this file less trustworthy
+rather than more. The work itself is not unverified, because later phases re-check it
+regardless: the checkpoint gates run against the current tree, not a phase-scoped
+diff (cp-8's dark-feature-scan failed on an artifact that predated Phase 8 — recorded
+above in this same file), and Phase 10's CONTENT-024 re-read and corrected
+`docs/phases/phase-4.md`. The gap from 3 to 7 in the `cp-*` series is therefore a deliberate state recorded here, not an oversight, and not an invitation to
+backfill. CER-007 is closed against this record.
 
 **Acceptance:** All 4 stories complete (CONTENT-016..019) — the three-stream promotion
 model with a hand-authored inline SVG lane diagram, the ceiling on what a provider pack
