@@ -31,6 +31,11 @@ under every condition it described, including with all DNS blackholed, and the s
 renders completely. That finding is closed as obsolete with the reproduction recorded, so
 it is not re-raised on a hunch.
 
+Re-tested under control on 2026-09-21 at 5318bb1 (CONTENT-027), that belief only half held:
+the original comparison confounded origin with URL fragment, so the air-gap cause is
+disproved — origin makes no difference — but the render gap itself is real at either
+origin, and the finding stays open, corrected rather than closed.
+
 The operator ruled on the four questions no story had standing to answer. This phase
 executes those rulings and closes the rest.
 
@@ -59,7 +64,7 @@ closes that gap and writes the rule down where it survives.
 | Published source citations | Operator ruling | **Keep**, recorded as deliberate policy |
 | Our host name and paths, in four files | Operator ruling | **Generalise**, all four |
 | Build-tooling audit in this repo | Operator ruling | **Move out** — not this project's subject |
-| Bundle allegedly fails from disk | Bad filing | **Obsolete** — tested air-gapped, renders completely |
+| Bundle allegedly fails from disk | Partly misfiled | **Amended, stays open** — air-gap cause disproved, render gap confirmed at either origin, evidence corrected (CONTENT-027) |
 | Flex effort-recording defect | Another project's bug | Referred upstream |
 | Phases 3-7 never gated | Operator ruling | **Leave untagged**; later phases re-check the work |
 
@@ -161,11 +166,13 @@ rather than against its own description. Its twin was pruned in Phase 5; if no l
 duplicate remains, it closes as superseded, with a note explaining why the row outlived
 its own target.
 
-**Done when** the air-gap finding closes as obsolete, carrying the reproduction that
-disproved it: the bundle opened from disk, headless, with DNS blackholed, renders every
-ledger row, expands every template tag, and emits no error — byte-identical to the same
-run with a network available. Record that the embedded React is mapped to local blob URLs
-rather than fetched, so the zero-dependency guarantee holds.
+**Done when (corrected, 2026-09-21 at 5318bb1)** the air-gap finding's cause is disproved
+and recorded: with the URL fragment held constant, `file://` and `http://127.0.0.1` dumps
+are byte-identical after blob-URL normalisation, so origin makes no difference and the
+zero-dependency guarantee holds. The render gap itself is confirmed at either origin —
+zero `GAP-0NN` ids render after stripping `<script>`/`<style>`, and `#gaps` renders no
+screen at all — so the finding stays open and amended rather than closing as obsolete.
+Phase 10 records the corrected evidence and does not repair the gap.
 
 **Not done if** the closure is recorded without the reproduction. A disproved finding that
 does not say how it was disproved will be filed again.
@@ -192,6 +199,20 @@ are keys in a resource map, not fetches — the embedded React resolves to local
 so nothing leaves the machine and the zero-dependency guarantee holds.
 
 Re-run both before closing the finding; do not close it on this record alone.
+
+**Correction (2026-09-21 at 5318bb1, CONTENT-027).** The two commands above were not a
+controlled comparison: the air-gapped run used `#gaps` and the control used no fragment, so
+the diff between them measured the fragment, not the origin. Re-run as a 2x2 — both origins
+crossed with both URL fragments, fragment held constant per comparison — the `file://` and
+`http://127.0.0.1` dumps are byte-identical after blob-URL normalisation, so
+**origin-independence and the zero-dependency guarantee are confirmed**. But "all nine
+ledger rows rendered" was a grep over the whole `--dump-dom` output that counted the inert
+`const ledger = [...]` template source inside `<script>` as rendered markup. After stripping
+`<script>` and `<style>` blocks, zero `GAP-0NN` ids render at either origin, and the `#gaps`
+fragment renders no screen at all (no `data-screen-label` node); only the no-fragment load
+renders a screen (`Overview`), at both origins. CER-005 therefore stays open with its
+evidence corrected in `docs/cer/backlog.md`; CER-012 records the grep-vs-DOM assertion flaw
+this record exhibited.
 
 ## Story ordering
 
