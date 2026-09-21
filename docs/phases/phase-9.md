@@ -46,7 +46,9 @@ flex convention during the Phase 8 build, each surfacing only when it broke some
   checkout and `merge-story-worktree` refused every story merge.
 - `test_command` held a prose description (`none - static HTML, ...`) in a field the
   build-gate guard executes as a shell command, so the gate had been failing red.
-  **No `cp-*` tag exists for any of phases 1-7** — this is why.
+  **Phases 3-7 were never tagged** — this is why. (Phases 1 and 2 carry tags under
+  an older naming convention, `cp1-bootstrap-complete` / `cp2-docs-refresh-complete`,
+  which a `cp-*` glob does not match.)
 - `.pairmode-worktrees/` and the shadow-reviewer marker files were not ignored.
 - `.claude/agents/gate-worker.md` remains for a dispatch capability flex removed.
 
@@ -113,7 +115,7 @@ convention and every divergence is either fixed or recorded with a reason:
   commit `87a8ef7`; this story records it, does not redo it.
 - `test_command` in `.companion/pairmode_context.json` and the `CLAUDE.build.md`
   Build standards line - **already fixed inline**, commit after `945d379`; record it,
-  including that this is why no phase has ever been tagged.
+  including that this is why phases 3-7 were never tagged.
 - `.claude/agents/gate-worker.md` - flex removed `spawn-gate-worker` dispatch in
   INFRA-422. Remove the agent definition, or keep it with a stated reason.
 - The Do-Later / Do-Much-Later backlog docs that `docs/phases/index.md` references

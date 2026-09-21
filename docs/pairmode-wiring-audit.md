@@ -50,15 +50,23 @@ line (verified: `` test_command=`true` — this project has no test suite... ``)
 inline after commit `945d379` under the same Phase 8 operator ruling. This story does
 not redo it.
 
-**Consequence — the load-bearing fact this audit exists to record:** `git tag -l
-'cp-*'` returns nothing. **No phase 1-7 was ever tagged.** For this project's entire
-build history through Phase 7, the prose `test_command` value was shelled out by
+**Consequence — the load-bearing fact this audit exists to record:** phases 3-7 were
+never tagged. Phases 1 and 2 *were*, under an older naming convention that predates
+the current `cp-<N>` form: `cp1-bootstrap-complete` and `cp2-docs-refresh-complete`.
+A `git tag -l 'cp-*'` glob does not match those, which is how this audit first
+recorded, wrongly, that no phase had ever been tagged — corrected here. Use `git tag
+-l` unfiltered when asking this question.
+
+From Phase 3 onward the prose `test_command` value was shelled out by
 `_run_build_gate_subprocess`, produced `command not found` (exit 127), and the build
 gate failed red on every checkpoint attempt — silently, because nothing in the loop
 surfaced the shell error as anything other than "gate did not pass." The gitignore fix
-(item 1) and this fix were applied together under the same ruling once the pattern was
-recognized; only after both landed did `cp-*` tagging become possible again, starting
-with whichever phase closes first under CP-8/CP-9.
+(item 1) and this fix were applied together under the same Phase 8 ruling once the
+pattern was recognized; `cp-8` is the first tag under the current convention.
+
+**Open question for the operator:** whether phases 3-7, which were marked complete in
+`docs/phases/index.md` without ever passing a green build gate, should be
+back-tagged.
 
 ---
 
