@@ -2,7 +2,7 @@
 id: CONTENT-024
 rail: CONTENT
 title: Record name-the-class-not-the-instance as an accepted constraint, and generalise our infrastructure identifiers out of all four files
-status: draft
+status: complete
 phase: "10"
 story_class: doc
 auth_gated: false
