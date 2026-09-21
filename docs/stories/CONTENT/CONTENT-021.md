@@ -2,7 +2,7 @@
 id: CONTENT-021
 rail: CONTENT
 title: Correct the rolling-restart.sh claim on the Promoting a change page
-status: draft
+status: complete
 phase: "9"
 story_class: doc
 auth_gated: false

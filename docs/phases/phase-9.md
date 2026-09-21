@@ -59,10 +59,10 @@ the next thing that breaks.
 | ID | Title | Status |
 |----|-------|--------|
 | CONTENT-020 | Reconcile this repo's pairmode wiring with current flex convention, and record what was already fixed inline | complete |
-| CONTENT-021 | Correct the rolling-restart.sh claim on the Promoting a change page | draft |
+| CONTENT-021 | Correct the rolling-restart.sh claim on the Promoting a change page | complete |
 | CONTENT-022 | Bring architecture.md and the era ledger current with how this project is actually built | complete |
 | CONTENT-020 | Reconcile this repo's pairmode wiring with current flex convention, and record what was already fixed inline | complete |
-| CONTENT-021 | Correct the rolling-restart.sh claim on the Promoting a change page | draft |
+| CONTENT-021 | Correct the rolling-restart.sh claim on the Promoting a change page | complete |
 | CONTENT-022 | Bring architecture.md and the era ledger current with how this project is actually built | complete |
 
 ### CONTENT-021 - The rolling-restart.sh claim
