@@ -45,8 +45,11 @@ the phase in prose, the anchor did not match, `record-checkpoint-step` emitted
 `warning: docs/architecture.md has no 'Current era:' anchor line — skipping phase
 pointer stamp`, and the pointer went stale the moment cp-8 was tagged.
 
-This repo's pairmode wiring divergences from current flex convention are recorded in
-`docs/pairmode-wiring-audit.md` (written by CONTENT-020).
+This repo's build-harness wiring was audited against convention in Phase 9. The audit
+itself is not kept here — its subject is the build harness rather than forqsite — and
+was removed in Phase 10 (CONTENT-025). The one outcome that is about this repository:
+`.claude/agents/gate-worker.md` was removed as a dark feature — the dispatch that would
+reach it was retired upstream — and must not be restored by a future scaffold sync.
 
 ---
 

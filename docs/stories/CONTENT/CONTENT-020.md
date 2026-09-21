@@ -15,6 +15,16 @@ touches:
 narrative_roles: []
 ---
 
+> **Relocation note (CONTENT-025, 2026-09-21).** `docs/pairmode-wiring-audit.md`,
+> referenced below, was removed from this repository in Phase 10: its subject is the
+> build harness, not administering forqsite. Its harness findings were written up
+> operator-local and untracked; the one repo-local outcome (the `gate-worker.md`
+> removal) is recorded in `docs/architecture.md`, and the phases 3-7 gate history in
+> `docs/checkpoints.md`. This document is left as the Phase 9 record of what was
+> specified and done — its body is unchanged and is not rewritten to match the current
+> tree. Its `## Tests` block is therefore a historical record and no longer
+> re-runnable as written.
+
 <!-- If this story changes any documented architecture, add docs/architecture.md to the touches: list above. -->
 
 ## Context

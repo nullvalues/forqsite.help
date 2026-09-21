@@ -49,7 +49,7 @@ reason.
 guard shelled out `test_command`, which held a prose description rather than a runnable
 command, and failed red (exit 127) on every checkpoint attempt. Those phases were marked
 complete in `docs/phases/index.md` without ever passing a green gate. Whether to
-back-tag them is an open operator question — see `docs/pairmode-wiring-audit.md`.
+back-tag them is an open operator question.
 
 **Acceptance:** All 4 stories complete (CONTENT-016..019) — the three-stream promotion
 model with a hand-authored inline SVG lane diagram, the ceiling on what a provider pack
@@ -76,8 +76,9 @@ docs gate was re-run against phase 8 and returned PASS; dark-feature-scan re-run
 
 **Acceptance:** All 3 stories complete (CONTENT-020..022). A remediation phase, parented
 to Phase 8, created because CP-8's docs gate refused to tag. CONTENT-020 audited this
-repo's pairmode wiring against flex 0.4.7 convention and recorded it in
-`docs/pairmode-wiring-audit.md`; CONTENT-021 corrected the `rolling-restart.sh` claim on
+repo's pairmode wiring against flex 0.4.7 convention and recorded it in a standalone
+wiring audit, since removed from this repository in Phase 10 (CONTENT-025) because its
+subject is the build harness; CONTENT-021 corrected the `rolling-restart.sh` claim on
 the Promoting a change page; CONTENT-022 brought `docs/architecture.md` and the era
 ledger current. Every story passed review on its first attempt.
 
