@@ -2,7 +2,7 @@
 id: CONTENT-023
 rail: CONTENT
 title: Bring the backlog's resolution-marker convention current so a finding can be closed without being deleted
-status: draft
+status: complete
 phase: "10"
 story_class: doc
 auth_gated: false

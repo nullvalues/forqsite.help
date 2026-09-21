@@ -75,7 +75,7 @@ failure mode this phase exists to avoid, so the convention lands first.
 
 | ID | Title | Status |
 |----|-------|--------|
-| CONTENT-023 | Bring the backlog's resolution-marker convention current so a finding can be closed without being deleted | draft |
+| CONTENT-023 | Bring the backlog's resolution-marker convention current so a finding can be closed without being deleted | complete |
 | CONTENT-024 | Record name-the-class-not-the-instance as an accepted constraint, and generalise our infrastructure identifiers out of all four files | draft |
 | CONTENT-025 | Move the build-tooling audit out of this repository and refer the flex defect to the project that owns it | draft |
 | CONTENT-026 | Record the publication policy and the phases 3-7 ruling where each belongs | draft |
