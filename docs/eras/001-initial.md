@@ -33,5 +33,5 @@ static site that survives a forqsite outage — and track the dev→prod gap bac
 | 5 | SDK 5.0.0 and the generated-registry ingestion path | complete |
 | 6 | Full structural back-check, and a verification stamp | complete |
 | 7 | Write for the reader, not about the work | complete |
-| 8 | The promotion path, and what a pack may carry | planned |
+| 8 | The promotion path, and what a pack may carry | complete |
 | 9 | Close CP-8: the defect the checklist missed, and the wiring that predates the convention | planned |
