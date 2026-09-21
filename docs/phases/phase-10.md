@@ -224,6 +224,13 @@ only closing move is deletion. The remaining four are independent and may run in
 - **Deleting or re-numbering any finding.** Every row present at the start of this phase is
   present at the end, with its original text and a marker appended. A phase that shortens
   the table has failed even if the table is empty.
+  **Exception, ruled 2026-09-21.** Where a row's own text carried one of the instance
+  identifiers this phase exists to remove, the identifier was redacted inside the row
+  (CER-003 and CER-004). Leaving it would have failed the *class not instance* line below,
+  since the backlog is a file this phase touched. The row's ID, quadrant, ordering, source,
+  date and meaning are preserved, and the marker records that the row itself was redacted.
+  The reasoning is in `docs/stories/CONTENT/CONTENT-024.md`. So "original text" means the
+  finding is not rewritten, weakened or renumbered — not that the bytes are immutable.
 - **Re-opening any Phase 8 or 9 content decision.**
 - **Patching the flex cache.** The defect is referred, never fixed here.
 - **Touching the published bundles**, except for the single gap-wording sentence if
@@ -250,7 +257,7 @@ this phase, record the management surface before the phase is checkpointed.
 
 ### CP-10 Cold-eyes checklist
 
-- [ ] no row deleted — does the backlog contain every finding it contained before this phase, with its original text intact and a marker appended?
+- [ ] no row deleted — does the backlog contain every finding it contained before this phase, with its original text intact (subject to the redaction exception above) and a marker appended?
 - [ ] every close has evidence — does each resolution name a commit, a document, a ruling or a reproduction, rather than asserting a conclusion?
 - [ ] no invented ruling — is every recorded operator decision traceable to an answer the operator actually gave?
 - [ ] class not instance — does any file this phase touched, or any evidence it transcribed, name a host, an absolute path, a machine or an operator identity?
