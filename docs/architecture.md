@@ -31,12 +31,19 @@ the deployment either); no database
 
 ## Era and phase currency
 
-This project's active era is **`001`** — `docs/eras/001-initial.md`. The most
-recently complete phase is **Phase 7**, "Write for the reader, not about the work"
-(`docs/phases/phase-7.md`). `docs/phases/index.md` is the source of truth for phase
-status; this line is a pointer into that record, not a second copy of it — read
-`docs/phases/index.md` for the current phase and full history rather than trusting
-this line to stay current on its own.
+Current era: `001` — `docs/eras/001-initial.md`
+Current phase: 8 — The promotion path, and what a pack may carry
+
+`docs/phases/index.md` is the source of truth for phase status. The two lines above
+and below are pointers into that record, not a second copy of it.
+
+**The `Current era:` line above is a hand-maintained anchor, and the `Current phase:`
+line below it is machine-owned.** `flex_build.py`'s checkpoint-tag step rewrites the
+`Current phase:` line in place on every tag, keyed off that anchor. Do not reformat
+either line or the pointer silently stops updating: this section previously carried
+the phase in prose, the anchor did not match, `record-checkpoint-step` emitted
+`warning: docs/architecture.md has no 'Current era:' anchor line — skipping phase
+pointer stamp`, and the pointer went stale the moment cp-8 was tagged.
 
 This repo's pairmode wiring divergences from current flex convention are recorded in
 `docs/pairmode-wiring-audit.md` (written by CONTENT-020).
