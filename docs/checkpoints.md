@@ -69,4 +69,37 @@ docs gate was re-run against phase 8 and returned PASS; dark-feature-scan re-run
 
 ---
 
+## cp-9
+
+**Phase:** 9 — Close CP-8: the defect the checklist missed, and the wiring that predates the convention
+**Tag command:** `git tag cp-9 && git push origin main --tags`
+
+**Acceptance:** All 3 stories complete (CONTENT-020..022). A remediation phase, parented
+to Phase 8, created because CP-8's docs gate refused to tag. CONTENT-020 audited this
+repo's pairmode wiring against flex 0.4.7 convention and recorded it in
+`docs/pairmode-wiring-audit.md`; CONTENT-021 corrected the `rolling-restart.sh` claim on
+the Promoting a change page; CONTENT-022 brought `docs/architecture.md` and the era
+ledger current. Every story passed review on its first attempt.
+
+**Gates:** security PASS (0 CRITICAL/HIGH; three public-hygiene items filed as CER-002,
+CER-003, CER-004). intent ALIGNED, with two LOW advisory findings — this file was stale,
+and the wiring audit had no staleness trigger; both were fixed as checkpoint remediation
+before the docs gate ran. docs **FAIL, then PASS on re-run**. dark-feature-scan PASS.
+
+**The docs FAIL is worth reading.** `architecture.md` named Phase 7 as most recently
+complete after `cp-8` had flipped Phase 8 to complete. The cause was structural, not
+textual: `flex_build.py`'s checkpoint-tag step maintains a machine-owned `Current phase:`
+line anchored to a hand-maintained `Current era:` line, and this project's
+`architecture.md` had never carried that anchor — so every tag emitted `warning: ... no
+'Current era:' anchor line — skipping phase pointer stamp` and the pointer was never
+auto-maintained. Correcting the wording alone would have gone stale again at the next
+tag. The anchor was added instead, and the pointer now self-updates.
+
+**Lesson recorded:** documentation findings raised by a checkpoint gate are checkpoint
+remediation — fix them, re-run the gate, re-record. Phase 9 itself was shaped as a full
+phase, which the intent gate judged proportionate given CONTENT-020's independent audit
+scope, but the two blocking docs findings alone did not warrant it.
+
+---
+
 _(Add a checkpoint section for each phase. Tag only after full checkpoint sequence passes.)_
