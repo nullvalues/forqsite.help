@@ -29,6 +29,20 @@ the deployment either); no database
 
 ---
 
+## Era and phase currency
+
+This project's active era is **`001`** — `docs/eras/001-initial.md`. The most
+recently complete phase is **Phase 7**, "Write for the reader, not about the work"
+(`docs/phases/phase-7.md`). `docs/phases/index.md` is the source of truth for phase
+status; this line is a pointer into that record, not a second copy of it — read
+`docs/phases/index.md` for the current phase and full history rather than trusting
+this line to stay current on its own.
+
+This repo's pairmode wiring divergences from current flex convention are recorded in
+`docs/pairmode-wiring-audit.md` (written by CONTENT-020).
+
+---
+
 ## Module structure
 
 ```
@@ -37,6 +51,8 @@ forqsite.help/
 ├── gap-handoff.html    # gap/handoff tracker (self-unpacking bundle)
 ├── docker-compose.yml  # nginx:alpine container, bind-mounts the two files above
 ├── nginx.conf          # listens on :6000 (matches caddy's port-registry.md assignment)
+├── scripts/
+│   └── bundle-template.py  # canonical bundle-edit tool (extract|inject|verify) — see Editing procedure below
 └── README.md
 ```
 
@@ -57,14 +73,34 @@ tag contains a JSON-encoded HTML string. The unpacked HTML embeds a `DCLogic` cl
 holding app state, `nav()`/hash-routing logic, and render helpers (`scrollToAnchor`,
 `copyCmd`, etc.).
 
-**Editing procedure** (see `docs/stories/CONTENT/CONTENT-001.md`'s Requires section
-for the original worked example): extract the `__bundler/template` JSON string, edit
-the unpacked HTML/JS as plain markup/`DCLogic` script, `node --check` any edited
-script, re-encode with `JSON.stringify` (mind `/` escaping), splice the result back
-into the script tag. Verify with a JSON round-trip on the re-encoded payload and,
-where the change is interactive/CSS behavior, a headless-browser render
-(e.g. Chromium `--dump-dom`) — a text diff alone can't confirm runtime behavior like
-scroll reset or hash routing.
+**Editing procedure**: edit through `scripts/bundle-template.py`, never by hand-splicing
+the `__bundler/template` JSON string. The script defines three subcommands, invoked as
+`python3 scripts/bundle-template.py <subcommand> …`:
+
+- `bundle-template.py extract <bundle.html> <out.template.html>` — pulls the decoded
+  template out of the bundle into a plain HTML/JS file.
+- `bundle-template.py inject <bundle.html> <in.template.html>` — re-encodes that file
+  and splices it back into the bundle's `<script type="__bundler/template">` element.
+- `bundle-template.py verify <bundle.html>` — re-encodes the template already in the
+  bundle and asserts the result is byte-identical to what's there.
+
+Workflow, as all four Phase 8 stories used it: run `verify` before editing, to confirm
+the script's encoder still matches the bundler's; `extract` once to a scratch file;
+make every edit in the unpacked template as plain markup/`DCLogic` script; `inject`
+once; `verify` again.
+
+Hand-splicing is wrong, not merely discouraged, because the encoder escapes every `/`
+as `\u002F`, and the template contains its own `</script>` sequences that would
+terminate the carrying script element if left unescaped — a manual re-encode that gets
+either detail wrong corrupts the bundle with no useful error at load. (The historical
+pre-script example in `docs/stories/CONTENT/CONTENT-001.md`'s Requires section predates
+this tooling; it is not current guidance.)
+
+The requirements the script doesn't cover are unchanged: `node --check` on any edited
+script, and — where the change is interactive/CSS behavior — a headless-browser render
+(e.g. Chromium `--dump-dom`), because a text diff can't confirm runtime behavior like
+scroll reset or hash routing. The JSON round-trip check is now performed by `verify`
+itself.
 
 ---
 

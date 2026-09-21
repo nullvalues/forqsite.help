@@ -26,8 +26,12 @@ static site that survives a forqsite outage — and track the dev→prod gap bac
 
 | Phase | Title | Status |
 |-------|-------|--------|
-| 1 | Bootstrap pairmode methodology | planned |
-| 2 | Refresh docs against forqsite drift | planned |
-| 3 | Drift re-sweep vs forqsite source (pairmode 0.3.0 proving cycle) | planned |
+| 1 | Bootstrap pairmode methodology | complete |
+| 2 | Refresh docs against forqsite drift | complete |
+| 3 | Drift re-sweep vs forqsite source (pairmode 0.3.0 proving cycle) | complete |
+| 4 | Containerize for edge deployment | complete |
+| 5 | SDK 5.0.0 and the generated-registry ingestion path | complete |
+| 6 | Full structural back-check, and a verification stamp | complete |
+| 7 | Write for the reader, not about the work | complete |
 | 8 | The promotion path, and what a pack may carry | planned |
 | 9 | Close CP-8: the defect the checklist missed, and the wiring that predates the convention | planned |
