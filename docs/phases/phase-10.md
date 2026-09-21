@@ -270,4 +270,37 @@ this phase, record the management surface before the phase is checkpointed.
 - [ ] duplicate state — is any fact now stored twice with independent writers?
 - [ ] half-implementation — is any branch unreachable, or any producer without its consumer?
 
-— developer fills in after phase completion —
+**Filled in at CP-10, 2026-09-21.** Gate evidence: security PASS, intent ALIGNED, docs PASS
+(after one remediation, `15967e2`), dark-feature scan 0 findings.
+
+- **no row deleted** — YES. 13 rows at the end against 7 at the start; none removed, none renumbered.
+  Eight rows were rewritten in place, two of them redacted mid-row under the exception recorded above.
+- **every close has evidence** — YES. CER-001 supersession cites the commit that pruned its target
+  (`3f16dcc`); CER-002/003/004/007 cite the ruling and the files changed; CER-005's correction cites a
+  re-run reproduction with its date and commit.
+- **no invented ruling** — YES. Four operator rulings, each dated 2026-09-21 and traceable to an answer
+  actually given: redact-in-row, the git-history rejection, operator-local for the audit, and the
+  CER-005 amendment.
+- **class not instance** — NO, nothing names one. The security gate derived the three identifiers from
+  history and swept the whole tree independently, plus home paths, machine names, private IPs and
+  credential patterns: zero hits.
+- **the reason survived** — YES, verified in all four generalised passages; a reader can still
+  reconstruct the single-Docker-host DNS constraint.
+- **nothing left dangling** — YES. The relocated audit's references all resolve to a relocation note or
+  a rewritten pointer; none imply the file still exists.
+- **no cross-repo patch** — YES, the harness cache is unmodified (`git status --porcelain` empty).
+- **a disproved finding says how** — CHANGED, and this is the phase's most important result. The air-gap
+  finding was **not** closed: re-running the reproduction disproved half the phase's own premise. Origin
+  independence holds; the ledger renders zero rows as DOM at any origin, and "nine rows rendered" was a
+  grep counting an inert template literal. CER-005 stays open with corrected evidence, and the phase
+  doc's original record is retained beside the correction.
+- **backlog honesty** — YES. Six findings were filed during the phase (CER-008..013), five of them
+  defects in our own work, including one orchestrator process error.
+- **required-never-written** — N/A. Docs-only phase; no read path or writer introduced.
+- **duplicate state** — NO. The phases 3-7 reason lives only in `docs/checkpoints.md`; the relocation
+  notes point at it rather than restating it.
+- **half-implementation** — N/A. No branch, producer or consumer introduced.
+
+**Carried forward.** CER-009, CER-011 and CER-012 are three instances of one pattern — asserting on a
+cheap proxy instead of the invariant. Both the intent and docs gates recommend naming it as a lesson;
+it is carried as three rows and left for the next phase's framing rather than bolted on here.
