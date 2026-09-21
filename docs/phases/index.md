@@ -10,7 +10,7 @@ Each phase has a dedicated file in `docs/phases/`.
 - Checkpoint tags follow the same naming: `cp-<PRED>NNN-main`, etc.
 - Omit suffix for projects using sequential integer IDs.
 
-**Next to build:** [Phase 9: Close CP-8: the defect the checklist missed, and the wiring that predates the convention](phase-9.md)
+**Next to build:** [Phase 10: Name the class, not the instance — and close the backlog by resolving, never deleting](phase-10.md)
 
 | Phase | Title | Status | Deferred from | Link |
 |-------|-------|--------|---------------|------|
@@ -23,6 +23,7 @@ Each phase has a dedicated file in `docs/phases/`.
 | 7 | Write for the reader, not about the work | complete | — | [phase-7.md](phase-7.md) |
 | 8 | The promotion path, and what a pack may carry | complete | — · cp-8 | [phase-8.md](phase-8.md) |
 | 9 | Close CP-8: the defect the checklist missed, and the wiring that predates the convention | complete | — | [phase-9.md](phase-9.md) |
+| 10 | Name the class, not the instance — and close the backlog by resolving, never deleting | planned | — | [phase-10.md](phase-10.md) |
 
 
 ## Backlog promotions
