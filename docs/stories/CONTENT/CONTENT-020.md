@@ -2,7 +2,7 @@
 id: CONTENT-020
 rail: CONTENT
 title: Reconcile this repo's pairmode wiring with current flex convention, and record what was already fixed inline
-status: draft
+status: complete
 phase: "9"
 story_class: doc
 auth_gated: false

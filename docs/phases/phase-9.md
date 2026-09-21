@@ -58,10 +58,10 @@ the next thing that breaks.
 
 | ID | Title | Status |
 |----|-------|--------|
-| CONTENT-020 | Reconcile this repo's pairmode wiring with current flex convention, and record what was already fixed inline | draft |
+| CONTENT-020 | Reconcile this repo's pairmode wiring with current flex convention, and record what was already fixed inline | complete |
 | CONTENT-021 | Correct the rolling-restart.sh claim on the Promoting a change page | draft |
 | CONTENT-022 | Bring architecture.md and the era ledger current with how this project is actually built | draft |
-| CONTENT-020 | Reconcile this repo's pairmode wiring with current flex convention, and record what was already fixed inline | draft |
+| CONTENT-020 | Reconcile this repo's pairmode wiring with current flex convention, and record what was already fixed inline | complete |
 | CONTENT-021 | Correct the rolling-restart.sh claim on the Promoting a change page | draft |
 | CONTENT-022 | Bring architecture.md and the era ledger current with how this project is actually built | draft |
 
