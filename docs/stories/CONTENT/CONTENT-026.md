@@ -2,7 +2,7 @@
 id: CONTENT-026
 rail: CONTENT
 title: Record the publication policy and the phases 3-7 ruling where each belongs
-status: draft
+status: complete
 phase: "10"
 story_class: doc
 auth_gated: false
