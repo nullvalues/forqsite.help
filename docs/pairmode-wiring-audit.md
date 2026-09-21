@@ -1,5 +1,12 @@
 # forqsite.help — Pairmode Wiring Audit
 
+> **Staleness trigger.** This audit's findings are pinned to **flex 0.4.7** and cite
+> that version's script internals by name (`bootstrap.py`'s `*_FILES` lists, `audit.py`'s
+> `CANONICAL_FILES`, `AGENT_FILES` contents). Re-verify every flex-version-specific claim
+> here when this project's flex version changes. Naming this expiry condition is the
+> difference between a record and the silent drift the audit itself documents.
+
+
 **Date:** 2026-09-21
 **Scope:** this repo's pairmode configuration (`.gitignore`, `.companion/pairmode_context.json`,
 `CLAUDE.build.md`, `.claude/agents/`, `docs/phases/index.md`, `docs/` structure) compared
