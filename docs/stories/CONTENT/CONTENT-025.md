@@ -2,7 +2,7 @@
 id: CONTENT-025
 rail: CONTENT
 title: Move the build-tooling audit out of this repository and refer the flex defect to the project that owns it
-status: draft
+status: complete
 phase: "10"
 story_class: doc
 auth_gated: false
