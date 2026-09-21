@@ -2,7 +2,7 @@
 id: CONTENT-027
 rail: CONTENT
 title: "Close the two stale findings: the duplicated gap wording, and the disproved air-gap claim"
-status: draft
+status: complete
 phase: "10"
 story_class: doc
 auth_gated: false
