@@ -126,6 +126,14 @@ project that owns it — the symptom, the affected rows transcribed (the evidenc
 a gitignored directory and cannot be cited by path), and whether it duplicates a finding
 already open there.
 
+**Open decision, to be settled before this story builds.** "Move it out" needs a
+destination, and the obvious one is the build tooling's own repository. Writing into
+another repository from a story here is a boundary this project has not crossed, and the
+per-story permission manifests are scoped to this repo by construction. The alternatives
+are: produce a paste-ready document here for the operator to file, keep the record
+operator-local and untracked, or authorise the cross-repo write explicitly. This story
+cannot choose for the operator.
+
 **Not done if** anything under the flex cache is modified. It is another project's source,
 and this story's own subject is a defect in it.
 
@@ -161,6 +169,29 @@ rather than fetched, so the zero-dependency guarantee holds.
 
 **Not done if** the closure is recorded without the reproduction. A disproved finding that
 does not say how it was disproved will be filed again.
+
+**The reproduction, as run (2026-09-21).** Copy the bundle to an empty directory, then:
+
+```
+# air-gapped, from disk: every DNS lookup blackholed
+chromium --headless --disable-gpu --no-sandbox --virtual-time-budget=8000 \
+  --host-resolver-rules="MAP * 0.0.0.0" --disable-features=NetworkService \
+  --dump-dom "file://<dir>/index.html#gaps"
+
+# control: same bundle served over a loopback static origin
+python3 -m http.server <port> --directory <dir>
+chromium --headless --disable-gpu --no-sandbox --virtual-time-budget=6000 \
+  --dump-dom "http://127.0.0.1:<port>/index.html"
+```
+
+Observed, air-gapped: exit 0, all nine ledger rows rendered, zero unexpanded template
+tags, zero error banners, and output byte-identical to the same run with a network
+available. The two origins differ only in the blob-URL prefix (`blob:null/...` versus
+`blob:http://127.0.0.1/...`), which is cosmetic. The `unpkg.com` strings in the bundle
+are keys in a resource map, not fetches — the embedded React resolves to local blob URLs,
+so nothing leaves the machine and the zero-dependency guarantee holds.
+
+Re-run both before closing the finding; do not close it on this record alone.
 
 ## Story ordering
 
