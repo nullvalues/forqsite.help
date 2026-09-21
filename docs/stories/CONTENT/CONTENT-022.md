@@ -2,7 +2,7 @@
 id: CONTENT-022
 rail: CONTENT
 title: Bring architecture.md and the era ledger current with how this project is actually built
-status: draft
+status: complete
 phase: "9"
 story_class: doc
 auth_gated: false
