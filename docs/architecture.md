@@ -70,10 +70,10 @@ INFRA-002 (phase 4) containerized this project: `docker-compose.yml` runs
 network, with `nginx.conf`, `index.html`, and `gap-handoff.html` bind-mounted
 read-only — no Dockerfile, no image build. No host ports are published; the sibling
 `caddy` repo's `sites/forqsite-help.caddy` reverse-proxies `forqsite.help` ->
-`forqsite-help:6000` over that shared network. Deployed alongside caddy on kw-pub61 at
-`/srv/forqsite-help`, mirroring caddy's own `/srv/edge` convention — required since
-Docker's embedded DNS resolution for the `edge` network only works within a single
-Docker host.
+`forqsite-help:6000` over that shared network. Deployed alongside caddy on the Docker
+host that runs the edge proxy at a per-site directory under that host's service root,
+mirroring the proxy's own deploy convention — required since Docker's embedded DNS
+resolution for the `edge` network only works within a single Docker host.
 
 Both HTML files are self-unpacking bundles: a `<script type="__bundler/template">`
 tag contains a JSON-encoded HTML string. The unpacked HTML embeds a `DCLogic` class

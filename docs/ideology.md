@@ -141,6 +141,33 @@ reconciled back into the source design session so the next re-export doesn't
 regress them. Reviewers evaluating Phase 2 stories against this constraint should
 treat loop-mediated, spec-cited, reviewed edits as compliant.
 
+### Name the class, not the instance
+
+**Rule:** Documentation must describe the architecture by its class — the constraint,
+the topology, the reason — not by our particular deployment instance. No host name,
+absolute path, or other deployment-specific identifier may appear in a live description
+of the architecture. These identifiers belong only in findings that make them the subject
+of an audit (e.g., a security finding quoting the instance as evidence), or in
+verification records (e.g., a test noting "command run from the deployment host"),
+never in the architecture itself.
+
+**Protects:** A public repository becomes a permanent leak of internal infrastructure
+once an instance name is committed. The same deployment identifier will appear in every
+file carrying it, multiplying the exposure. Generalizing the language protects against
+this while preserving the explanation (why the design is this way).
+
+**Rationale:** This project's own documentation is public. An identifier that appears
+once appears in git history forever, and a pickaxe search will find it in every commit.
+Naming the instance is worse than not documenting it at all — it trades the chance that
+a reader might infer the detail locally for the certainty that it will be searchable online.
+
+**Override path:** A specific identifier may appear only where it is the subject of a
+finding (e.g., "the host `[name]` leaks in three files") or a verification record (e.g.,
+"verified from the deployment host"). Even then, this story's ruling narrowed the practice:
+a finding can cite its subject by class ("the Docker host that runs the edge proxy") and a
+verification record can do the same ("from the deployment host"), so naming the instance is
+not required — only permitted. Prefer the class form when both are possible.
+
 
 ---
 

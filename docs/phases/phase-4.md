@@ -52,11 +52,11 @@ build pipeline, framework, or hand-maintained server code.
 - No `Dockerfile` — bind-mount only, preserving the "no build step"
   constraint.
 - `docker compose config` validates cleanly.
-- Deployed to kw-pub61 (same host as caddy, required for Docker DNS
-  resolution on the shared `edge` network) at `/srv/forqsite-help`,
-  mirroring caddy's own `/srv/edge` deploy convention.
+- Deployed to the Docker host that runs the edge proxy (same host as caddy,
+  required for Docker DNS resolution on the shared `edge` network) at a per-site
+  directory under that host's service root, mirroring the proxy's own deploy convention.
 - Post-deploy verification: `docker compose up -d` brings the container
-  up healthy; from kw-pub61, `curl --resolve forqsite.help:443:127.0.0.1
+  up healthy; from the deployment host, `curl --resolve forqsite.help:443:127.0.0.1
   https://forqsite.help/` (proxied through the already-running caddy
   container) returns `200`, not `502`.
 - `docs/architecture.md` updated to describe the new `docker-compose.yml`
@@ -71,13 +71,14 @@ build pipeline, framework, or hand-maintained server code.
   server," a future reader lands on a contradiction. Mitigation:
   acceptance criteria explicitly requires updating this repo's own
   architecture doc, not just standing up the container.
-- Risk: deploying to `/srv/forqsite-help` on kw-pub61 is a shared
-  production host also running caddy — a bad `docker compose up` there
-  is blast-radius-adjacent to the live proxy (though on a different
-  container, `edge` network only, no port conflict since nothing is
-  host-published). Mitigation: `docker compose config` validated before
-  `up`; verified via the already-proven `curl --resolve` pattern used in
-  caddy's own EH006-main phase, not by touching caddy's container at all.
+- Risk: deploying to a per-site directory on the Docker host that runs
+  the edge proxy is a shared production host also running caddy — a bad
+  `docker compose up` there is blast-radius-adjacent to the live proxy
+  (though on a different container, `edge` network only, no port conflict
+  since nothing is host-published). Mitigation: `docker compose config`
+  validated before `up`; verified via the already-proven `curl --resolve`
+  pattern used in caddy's own EH006-main phase, not by touching caddy's
+  container at all.
 
 ## Deferred stories
 
@@ -86,16 +87,17 @@ None.
 ## Build record
 
 Built and deployed 2026-08-10. `docker-compose.yml` + `nginx.conf` added
-locally, validated with `docker compose config`. Deployed to kw-pub61 at
-`/srv/forqsite-help` (sudo-gated `mkdir`/`chown` run by the operator, rest
-by the agent): rsync of the 4 runtime files only (verified via `-n`
-dry-run first), `docker compose up -d` on kw-pub61.
+locally, validated with `docker compose config`. Deployed to the Docker
+host that runs the edge proxy at a per-site directory under that host's service root
+(sudo-gated `mkdir`/`chown` run by the operator, rest by the agent): rsync of
+the 4 runtime files only (verified via `-n` dry-run first), `docker compose up -d`
+from the deployment host.
 
 Verification:
-- `docker ps` on kw-pub61: `forqsite-help` container `Up`.
+- `docker ps` from the deployment host: `forqsite-help` container `Up`.
 - End-to-end through the already-running caddy container:
   `curl --resolve forqsite.help:443:127.0.0.1 https://forqsite.help/` ->
-  `200`, byte-identical to the local `index.html` (427642 bytes both
+  `200`, byte-identical to the source `index.html` (427642 bytes both
   sides). `/gap-handoff.html` -> `200`.
 - `docs/architecture.md` and `CLAUDE.md` updated to drop the stale
   "no server" framing and describe the nginx deployment; content

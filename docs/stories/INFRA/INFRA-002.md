@@ -19,10 +19,10 @@ touches: []
   already correct and unmodified by this story — see FORQSITEHELP-001 /
   phase-EH002-main in the caddy repo. This story only builds the missing
   backend side.
-- caddy's edge stack already deployed and running on kw-pub61
-  (phase-EH006-main, complete) — this story's container joins the
-  existing external `edge` Docker network created there; it does not
-  create that network itself.
+- caddy's edge stack already deployed and running on the Docker host
+  that runs the edge proxy (phase-EH006-main, complete) — this story's
+  container joins the existing external `edge` Docker network created
+  there; it does not create that network itself.
 
 ## Ensures
 
@@ -50,17 +50,18 @@ touches: []
 ## Instructions
 
 Deploy (after the story's `docker-compose.yml`/`nginx.conf` are
-committed) to kw-pub61 at `/srv/forqsite-help`, mirroring caddy's own
-`/srv/edge` convention: rsync `docker-compose.yml`, `nginx.conf`,
+committed) to the Docker host that runs the edge proxy at a per-site
+directory under that host's service root, mirroring the proxy's own deploy
+convention: rsync `docker-compose.yml`, `nginx.conf`,
 `index.html`, `gap-handoff.html` only — not the full repo (no `.git`,
 `docs/`, `.claude/`, `.companion/`). `docker compose config` validated
 before `docker compose up -d`.
 
 ## Tests
 
-- `docker compose config` passes locally and on kw-pub61.
-- On kw-pub61: `docker ps` shows `forqsite-help` container `Up`.
-- On kw-pub61: `curl --resolve forqsite.help:443:127.0.0.1
+- `docker compose config` passes locally and from the deployment host.
+- From the deployment host: `docker ps` shows `forqsite-help` container `Up`.
+- From the deployment host: `curl --resolve forqsite.help:443:127.0.0.1
   https://forqsite.help/` (through the existing caddy container) returns
   `200` with the real page content, not `502`.
 - `curl .../gap-handoff.html` via the same pattern also returns `200`.
