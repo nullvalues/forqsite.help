@@ -32,7 +32,7 @@ the deployment either); no database
 ## Era and phase currency
 
 Current era: `001` — `docs/eras/001-initial.md`
-Current phase: 9 — Close CP-8: the defect the checklist missed, and the wiring that predates the convention
+Current phase: 10 — Name the class, not the instance — and close the backlog by resolving, never deleting
 
 `docs/phases/index.md` is the source of truth for phase status. The two lines above
 and below are pointers into that record, not a second copy of it.
