@@ -65,5 +65,5 @@ Rejected findings. Record the rejection reason so it is not re-raised.
 |----|---------|--------|------|-------|------------|
 
 
-| — | *(none)* | — | — | — | — |
+| CER-008 | The internal host name and deployment paths generalised out of the working tree in Phase 10 remain in this repository's git history, in every commit from the Phase 4 containerization onward; a `git log -S` search still surfaces them. No edit to the working tree reaches history. | orchestrator (Phase 10, CONTENT-024) | 2026-09-21 | 10 | Rejected: the only remedy is a history rewrite and force-push, which invalidates the `cp-N` checkpoint tags this project uses as its verification record. If these identifiers ever become genuinely sensitive, the correct response is to rotate them, not to rewrite history. Recorded so the question is not re-raised at each security gate. |
 
