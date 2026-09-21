@@ -27,7 +27,8 @@ Each phase has a dedicated file in `docs/phases/`.
 
 ## Backlog promotions
 
-_(List items promoted from the Do-Later / Do-Much-Later backlog into active phases here, with a one-line reason and the target phase.)_
+_(List items promoted from the Do Later / Do Much Later backlog — [docs/cer/backlog.md](../cer/backlog.md) —
+into active phases here, with a one-line reason and the target phase.)_
 
 ---
 
@@ -40,4 +41,4 @@ and this file is deleted (git history records the transit).
 
 | Proposed file | Title | Era |
 |---------------|-------|-----|
-| [phase-proposed-pairmode-030-migration-20260722-001.md](phase-proposed-pairmode-030-migration-20260722-001.md) | Migrate to pairmode 0.3.0 | — |
+| _(none)_ | — | — |
