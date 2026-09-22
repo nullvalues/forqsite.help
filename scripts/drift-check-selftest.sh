@@ -1,0 +1,343 @@
+#!/usr/bin/env bash
+#
+# drift-check-selftest.sh — exercises scripts/drift-check.sh against a throwaway
+# fixture git repository and a throwaway local static server bound to 127.0.0.1,
+# using a control directory to make the server return bytes that differ from the
+# file it would otherwise serve on disk (the shape needed to reproduce the
+# stale-inode/forbidden-proxy case locally). Contacts no host other than 127.0.0.1.
+#
+# Cases (see docs/stories/INFRA/INFRA-007.md § Tests):
+#   1. match                   — exit 0, no "DRIFT" in output, nginx.conf line present
+#   2. drift, matching commit  — exit 3, names the matching commit's short sha, subject
+#                                 and commits-behind count, names the ref's short sha,
+#                                 reports gap-handoff.html ok
+#   3. drift, no matching commit — exit 3, states no commit in this history matches,
+#                                 not presented as a tool error
+#   4. forbidden proxy (stale inode) — file on disk in the served directory holds the
+#                                 HEAD bytes, but the server returns different bytes;
+#                                 exit 3 proves the check asserts on the request, not
+#                                 the file
+#   5. fetch failure            — exit 4, message names the bundle and the reason, not 3
+#   6. missing config           — exit 2, message names FORQSITE_HELP_SITE_URL, no
+#                                 request attempted
+#   7. usage error               — exit 64, not 2 (CER-015)
+#
+# Exits non-zero if any case fails.
+
+set -euo pipefail
+
+REPO_ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")/.." rev-parse --show-toplevel)"
+DRIFT_CHECK_SH="$REPO_ROOT/scripts/drift-check.sh"
+
+WORK_DIR="$(mktemp -d)"
+SERVER_PID=""
+cleanup() {
+  if [ -n "$SERVER_PID" ] && kill -0 "$SERVER_PID" 2>/dev/null; then
+    kill "$SERVER_PID" 2>/dev/null || true
+    wait "$SERVER_PID" 2>/dev/null || true
+  fi
+  rm -rf "$WORK_DIR"
+}
+trap cleanup EXIT
+
+FIXTURE_REPO="$WORK_DIR/fixture-repo"
+SERVE_DIR="$WORK_DIR/serve-dir"
+CONTROL_DIR="$WORK_DIR/control-dir"
+REQUEST_LOG="$WORK_DIR/request-log"
+SERVER_SCRIPT="$WORK_DIR/fixture-server.py"
+
+FAILURES=0
+PASS_COUNT=0
+
+report() {
+  local name="$1" ok="$2" detail="$3"
+  if [ "$ok" -eq 0 ]; then
+    echo "PASS: $name"
+    PASS_COUNT=$((PASS_COUNT + 1))
+  else
+    echo "FAIL: $name — $detail"
+    FAILURES=$((FAILURES + 1))
+  fi
+}
+
+# --- Build fixture git repo: 3 commits touching index.html, 1 touching gap-handoff --
+mkdir -p "$FIXTURE_REPO"
+git -C "$FIXTURE_REPO" init -q
+git -C "$FIXTURE_REPO" config user.email "selftest@example.invalid"
+git -C "$FIXTURE_REPO" config user.name "drift-check-selftest"
+
+printf 'index v1\n' > "$FIXTURE_REPO/index.html"
+printf 'gap v1\n' > "$FIXTURE_REPO/gap-handoff.html"
+git -C "$FIXTURE_REPO" add index.html gap-handoff.html
+git -C "$FIXTURE_REPO" commit -q -m "fixture: initial bundles"
+COMMIT1="$(git -C "$FIXTURE_REPO" rev-parse HEAD)"
+
+printf 'index v2\n' > "$FIXTURE_REPO/index.html"
+git -C "$FIXTURE_REPO" add index.html
+git -C "$FIXTURE_REPO" commit -q -m "fixture: index v2"
+COMMIT2="$(git -C "$FIXTURE_REPO" rev-parse HEAD)"
+
+printf 'index v3\n' > "$FIXTURE_REPO/index.html"
+git -C "$FIXTURE_REPO" add index.html
+git -C "$FIXTURE_REPO" commit -q -m "fixture: index v3"
+COMMIT3="$(git -C "$FIXTURE_REPO" rev-parse HEAD)"
+
+COMMIT1_SHORT="$(git -C "$FIXTURE_REPO" rev-parse --short "$COMMIT1")"
+HEAD_SHORT="$(git -C "$FIXTURE_REPO" rev-parse --short HEAD)"
+COMMIT1_INDEX_SHA="$(printf 'index v1\n' | sha256sum | cut -d' ' -f1)"
+
+# --- Build served directory + control directory --------------------------------------
+mkdir -p "$SERVE_DIR" "$CONTROL_DIR"
+cp "$FIXTURE_REPO/index.html" "$SERVE_DIR/index.html"
+cp "$FIXTURE_REPO/gap-handoff.html" "$SERVE_DIR/gap-handoff.html"
+
+reset_control() {
+  rm -f "$CONTROL_DIR"/override-* "$CONTROL_DIR"/404-* 2>/dev/null || true
+  : > "$REQUEST_LOG"
+}
+reset_control
+
+# --- Fixture static server ------------------------------------------------------------
+# Serves files from $SERVE_DIR by default. If $CONTROL_DIR/override-<name> exists, its
+# bytes are served for a request to /<name> instead of the file in $SERVE_DIR — this is
+# what makes the stale-inode/forbidden-proxy case reproducible locally: the file on disk
+# in the served directory can hold one set of bytes while the server answers a request
+# with another. If $CONTROL_DIR/404-<name> exists, a request for /<name> gets a 404.
+# Every request is logged to $REQUEST_LOG.
+cat > "$SERVER_SCRIPT" <<'PYEOF'
+import http.server
+import os
+import socketserver
+import sys
+
+SERVE_DIR, CONTROL_DIR, REQUEST_LOG, PORT = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4])
+
+
+class Handler(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        name = self.path.lstrip("/")
+        with open(REQUEST_LOG, "a") as log:
+            log.write(name + "\n")
+        notfound = os.path.join(CONTROL_DIR, "404-" + name)
+        if os.path.exists(notfound):
+            self.send_response(404)
+            self.end_headers()
+            return
+        override = os.path.join(CONTROL_DIR, "override-" + name)
+        target = override if os.path.exists(override) else os.path.join(SERVE_DIR, name)
+        if not os.path.exists(target):
+            self.send_response(404)
+            self.end_headers()
+            return
+        with open(target, "rb") as f:
+            data = f.read()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/octet-stream")
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def log_message(self, format, *args):
+        pass
+
+
+class Server(socketserver.TCPServer):
+    allow_reuse_address = True
+
+
+with Server(("127.0.0.1", PORT), Handler) as httpd:
+    httpd.serve_forever()
+PYEOF
+
+PORT=$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1]); s.close()')
+python3 "$SERVER_SCRIPT" "$SERVE_DIR" "$CONTROL_DIR" "$REQUEST_LOG" "$PORT" &
+SERVER_PID=$!
+
+# Wait for the port to accept a connection before running any case.
+for _ in $(seq 1 50); do
+  if (exec 3<>"/dev/tcp/127.0.0.1/${PORT}") 2>/dev/null; then
+    exec 3>&- 3<&-
+    break
+  fi
+  sleep 0.1
+done
+
+FIXTURE_URL="http://127.0.0.1:${PORT}"
+
+run_drift_check() {
+  ( cd "$FIXTURE_REPO" && "$DRIFT_CHECK_SH" "$@" )
+}
+
+# =====================================================================================
+# Case 1: match
+# =====================================================================================
+reset_control
+export FORQSITE_HELP_SITE_URL="$FIXTURE_URL"
+
+set +e
+out_case1="$(run_drift_check 2>&1)"
+status_case1=$?
+set -e
+
+ok=0
+detail=""
+if [ "$status_case1" -ne 0 ]; then
+  ok=1; detail="expected exit 0, got $status_case1: $out_case1"
+elif printf '%s' "$out_case1" | grep -q "DRIFT"; then
+  ok=1; detail="output contains DRIFT on a matching site"
+elif ! printf '%s' "$out_case1" | grep -q "nginx.conf"; then
+  ok=1; detail="nginx.conf not-served line missing"
+fi
+report "match (exit 0, no DRIFT, nginx.conf line present)" "$ok" "$detail"
+
+# =====================================================================================
+# Case 2: drift, matching commit
+# =====================================================================================
+reset_control
+printf 'index v1\n' > "$CONTROL_DIR/override-index.html"
+
+set +e
+out_case2="$(run_drift_check 2>&1)"
+status_case2=$?
+set -e
+
+ok=0
+detail=""
+if [ "$status_case2" -ne 3 ]; then
+  ok=1; detail="expected exit 3, got $status_case2: $out_case2"
+elif ! printf '%s' "$out_case2" | grep -q "$COMMIT1_SHORT"; then
+  ok=1; detail="output did not name the matching commit's short sha ($COMMIT1_SHORT)"
+elif ! printf '%s' "$out_case2" | grep -q "fixture: initial bundles"; then
+  ok=1; detail="output did not name the matching commit's subject"
+elif ! printf '%s' "$out_case2" | grep -q "2 commits behind the ref"; then
+  ok=1; detail="output did not name the commits-behind count"
+elif ! printf '%s' "$out_case2" | grep -q "$HEAD_SHORT"; then
+  ok=1; detail="output did not name the ref's own short sha ($HEAD_SHORT)"
+elif ! printf '%s' "$out_case2" | grep -q "gap-handoff.html.*ok"; then
+  ok=1; detail="gap-handoff.html not reported ok"
+fi
+report "drift, matching commit (exit 3, names commit + count + ref, gap-handoff ok)" "$ok" "$detail"
+
+# =====================================================================================
+# Case 3: drift, no matching commit
+# =====================================================================================
+reset_control
+printf 'index v1 mutated on the host\n' > "$CONTROL_DIR/override-index.html"
+
+set +e
+out_case3="$(run_drift_check 2>&1)"
+status_case3=$?
+set -e
+
+ok=0
+detail=""
+if [ "$status_case3" -ne 3 ]; then
+  ok=1; detail="expected exit 3, got $status_case3: $out_case3"
+elif ! printf '%s' "$out_case3" | grep -q "match no commit in this history"; then
+  ok=1; detail="output did not state that no commit in this history matches"
+fi
+report "drift, no matching commit (exit 3, states no match, not a tool error)" "$ok" "$detail"
+
+# =====================================================================================
+# Case 4: forbidden proxy (stale inode)
+# =====================================================================================
+reset_control
+# The file on disk in the served directory holds the HEAD bytes...
+on_disk_sha="$(sha256sum "$SERVE_DIR/index.html" | cut -d' ' -f1)"
+head_sha="$(git -C "$FIXTURE_REPO" show HEAD:index.html | sha256sum | cut -d' ' -f1)"
+# ...but the server is made to answer with the first commit's bytes instead.
+printf 'index v1\n' > "$CONTROL_DIR/override-index.html"
+
+ok=0
+detail=""
+if [ "$on_disk_sha" != "$head_sha" ]; then
+  ok=1; detail="fixture setup broken: file on disk does not hold HEAD bytes before the case even runs"
+else
+  set +e
+  out_case4="$(run_drift_check 2>&1)"
+  status_case4=$?
+  set -e
+  if [ "$status_case4" -ne 3 ]; then
+    ok=1; detail="expected exit 3, got $status_case4 — a check that hashed the on-disk file (which matches HEAD, sha $on_disk_sha) would wrongly report a match here; only a request-based check catches this"
+  fi
+fi
+report "forbidden proxy / stale inode (on-disk file matches HEAD, served bytes do not — exit 3)" "$ok" "$detail"
+
+# =====================================================================================
+# Case 5: fetch failure
+# =====================================================================================
+reset_control
+: > "$CONTROL_DIR/404-index.html"
+
+set +e
+out_case5="$(run_drift_check 2>&1)"
+status_case5=$?
+set -e
+
+ok=0
+detail=""
+if [ "$status_case5" -ne 4 ]; then
+  ok=1; detail="expected exit 4, got $status_case5: $out_case5"
+elif ! printf '%s' "$out_case5" | grep -q "index.html"; then
+  ok=1; detail="message did not name index.html"
+fi
+report "fetch failure (exit 4, names bundle + reason, not 3)" "$ok" "$detail"
+reset_control
+
+# =====================================================================================
+# Case 6: missing config
+# =====================================================================================
+reset_control
+unset FORQSITE_HELP_SITE_URL || true
+rm -f "$FIXTURE_REPO/scripts/deploy.env" 2>/dev/null || true
+
+set +e
+out_case6="$(run_drift_check 2>&1)"
+status_case6=$?
+set -e
+
+ok=0
+detail=""
+if [ "$status_case6" -ne 2 ]; then
+  ok=1; detail="expected exit 2, got $status_case6: $out_case6"
+elif ! printf '%s' "$out_case6" | grep -q "FORQSITE_HELP_SITE_URL"; then
+  ok=1; detail="message did not name FORQSITE_HELP_SITE_URL"
+elif [ -s "$REQUEST_LOG" ]; then
+  ok=1; detail="a request was made despite missing configuration"
+fi
+report "missing config (exit 2, names variable, no request attempted)" "$ok" "$detail"
+
+export FORQSITE_HELP_SITE_URL="$FIXTURE_URL"
+
+# =====================================================================================
+# Case 7: usage error
+# =====================================================================================
+reset_control
+
+set +e
+out_case7="$(run_drift_check --nonsense-flag 2>&1)"
+status_case7=$?
+set -e
+
+ok=0
+detail=""
+if [ "$status_case7" -ne 64 ]; then
+  ok=1; detail="expected exit 64, got $status_case7: $out_case7"
+elif [ "$status_case7" -eq 2 ]; then
+  ok=1; detail="usage error shares exit code 2 with missing-config (CER-015)"
+fi
+report "usage error (exit 64, distinct from 2 — CER-015)" "$ok" "$detail"
+
+# =====================================================================================
+echo ""
+echo "drift-check-selftest: $PASS_COUNT passed, $FAILURES failed"
+
+echo ""
+echo "--- captured output, all cases (for the hygiene grep) ---"
+printf '%s\n' "$out_case1" "$out_case2" "$out_case3" "${out_case4:-}" "$out_case5" "$out_case6" "$out_case7"
+echo "--- end captured output ---"
+
+if [ "$FAILURES" -ne 0 ]; then
+  exit 1
+fi
+exit 0
