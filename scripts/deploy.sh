@@ -6,7 +6,11 @@
 # What it does:
 #   - Resolves the git repository containing the current working directory.
 #   - Reads deployment target configuration (ssh alias + remote directory) from the
-#     environment, falling back to a gitignored scripts/deploy.env when unset.
+#     environment, falling back to a gitignored scripts/deploy.env when unset. That file
+#     is read as KEY=value data by read-deploy-env.sh (loaded from this script's own
+#     directory), never executed (CER-024); a non-empty value in it overrides the
+#     environment's, and any line that is not a KEY=value line for a known key is
+#     refused (exit 2) by line number, without printing its content.
 #   - Refuses to proceed, before any network contact, if either bundle is untracked at
 #     the ref, or its working-tree or staged content differs from that ref ("dirty").
 #   - Backs up each live bundle on the remote side to <name>.bak-<UTC stamp>, then
@@ -57,7 +61,8 @@
 #
 # Exit codes:
 #   0  success
-#   2  configuration missing (FORQSITE_HELP_DEPLOY_HOST / FORQSITE_HELP_DEPLOY_DIR), or
+#   2  configuration missing or unreadable (FORQSITE_HELP_DEPLOY_HOST /
+#      FORQSITE_HELP_DEPLOY_DIR unset, or scripts/deploy.env has a refused line), or
 #      FORQSITE_HELP_DEPLOY_HOST does not match the ssh-alias pattern
 #      ^[A-Za-z0-9._][A-Za-z0-9._-]*$ (letters, digits, ., _, -; may not begin with -)
 #   3  dirty-tree refusal (untracked at the ref, or working tree / index differs)
@@ -111,6 +116,10 @@ done
 # sibling generator to invoke is always the one next to this script.
 SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MAKE_PROVENANCE_SH="$SELF_DIR/make-provenance.sh"
+# The config reader comes from this script's own directory, never the deployed repo's
+# (CER-024): the repo below may be one the operator does not control.
+# shellcheck source=read-deploy-env.sh
+. "$SELF_DIR/read-deploy-env.sh"
 
 # --- Repo resolution -----------------------------------------------------------
 REPO_ROOT="$(git rev-parse --show-toplevel)"
@@ -122,10 +131,11 @@ DIR="${FORQSITE_HELP_DEPLOY_DIR:-}"
 
 if [ -z "$HOST" ] || [ -z "$DIR" ]; then
   if [ -f "scripts/deploy.env" ]; then
-    # shellcheck disable=SC1091
-    source "scripts/deploy.env"
-    HOST="${FORQSITE_HELP_DEPLOY_HOST:-$HOST}"
-    DIR="${FORQSITE_HELP_DEPLOY_DIR:-$DIR}"
+    # Parsed as KEY=value data, never executed (CER-024). A non-empty file value
+    # overrides the environment's; an empty or absent key leaves it in place.
+    read_deploy_env "scripts/deploy.env" "deploy.sh" || exit 2
+    HOST="${DEPLOY_ENV_HOST:-$HOST}"
+    DIR="${DEPLOY_ENV_DIR:-$DIR}"
   fi
 fi
 

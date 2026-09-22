@@ -15,8 +15,11 @@
 # What it does:
 #   - Resolves the git repository containing the current working directory.
 #   - Reads the site's base URL from the environment, falling back to a gitignored
-#     scripts/deploy.env when unset (the same file, and the same read pattern,
-#     deploy.sh already uses for its own two variables).
+#     scripts/deploy.env when unset (the same file deploy.sh reads). That file is read
+#     as KEY=value data by read-deploy-env.sh (loaded from this script's own directory,
+#     the same reader deploy.sh uses), never executed (CER-024); a non-empty value in it
+#     overrides the environment's, and any line that is not a KEY=value line for a known
+#     key is refused (exit 2) by line number, without printing its content.
 #   - For each bundle: fetches <base-url>/<bundle> to a file (never a shell variable —
 #     command substitution strips trailing newlines and would report a false DRIFT on
 #     a correct site), with an identity content-encoding and no redirect following,
@@ -46,7 +49,8 @@
 # Exit codes:
 #   0   no drift — every bundle's served bytes match the ref (the sidecar, if present,
 #       agreed, or was absent/unreadable — never part of this decision either way)
-#   2   configuration missing (FORQSITE_HELP_SITE_URL)
+#   2   configuration missing or unreadable (FORQSITE_HELP_SITE_URL unset, or
+#       scripts/deploy.env has a refused line)
 #   3   drift detected — at least one bundle's served bytes do not match the ref
 #       (outranks 6: always the exit when both are true)
 #   4   fetch failure (non-2xx, a redirect, a connection failure, a timeout, a refused
@@ -150,6 +154,13 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
+# --- This script's own location, for loading its sibling config reader -------------
+# Resolved before the cd below, from this script's own path, never from the checked
+# repo's root: the repo may be one the operator does not control (CER-024).
+SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=read-deploy-env.sh
+. "$SELF_DIR/read-deploy-env.sh"
+
 # --- Repo resolution -----------------------------------------------------------------
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "$REPO_ROOT"
@@ -159,9 +170,10 @@ BASE_URL="${FORQSITE_HELP_SITE_URL:-}"
 
 if [ -z "$BASE_URL" ]; then
   if [ -f "scripts/deploy.env" ]; then
-    # shellcheck disable=SC1091
-    source "scripts/deploy.env"
-    BASE_URL="${FORQSITE_HELP_SITE_URL:-$BASE_URL}"
+    # Parsed as KEY=value data, never executed (CER-024). A non-empty file value
+    # overrides the environment's; an empty or absent key leaves it in place.
+    read_deploy_env "scripts/deploy.env" "drift-check.sh" || exit 2
+    BASE_URL="${DEPLOY_ENV_SITE_URL:-$BASE_URL}"
   fi
 fi
 

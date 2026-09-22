@@ -144,7 +144,10 @@ falling back to a gitignored `scripts/deploy.env`. That file is never committed;
 committed `scripts/deploy.env.example` template (all lines commented) is the starting
 point for creating it. The variable names: `FORQSITE_HELP_DEPLOY_HOST` (deploy.sh, ssh
 alias), `FORQSITE_HELP_DEPLOY_DIR` (deploy.sh, remote per-site directory) and
-`FORQSITE_HELP_SITE_URL` (drift-check.sh, base URL to fetch served bytes from).
+`FORQSITE_HELP_SITE_URL` (drift-check.sh, base URL to fetch served bytes from). The file
+is parsed as `KEY=value` data for those known keys by one shared reader loaded from the
+scripts' own directory, never executed, so its values stay literal text, and any other
+line is refused by line number without printing its content (CER-024).
 
 **The provenance sidecar** (`site-provenance.json`, INFRA-008). `make-provenance.sh`
 generates it and `deploy.sh` writes it last, deliberately: it is deployed only after both

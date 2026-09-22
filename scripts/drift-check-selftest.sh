@@ -51,6 +51,17 @@
 #   13. oversized sidecar (INFRA-010) — as above but for site-provenance.json, with the
 #                                 bundles otherwise matching; exit 0, and the sidecar
 #                                 still reports "absent or unreadable"
+#   14. config file read as data (INFRA-013, CER-024), FORQSITE_HELP_SITE_URL unset in the
+#       environment unless stated:
+#       a. accepted forms — the example's form (comment, blank line, double-quoted URL,
+#                           the deploy keys too); `export` + single-quoted URL; a bare
+#                           URL with a CRLF ending: each exit 0, result ok
+#       b. payloads       — URL set to "$(touch M)" and to a backtick `touch M` in double
+#                           quotes: every marker absent
+#       c. command line   — line 3 is `touch M3`: exit 2, names line 3, does not print the
+#                           line, M3 absent, no request made
+#       e. env complete   — URL in the environment, malformed file present: exit 0 (the
+#                           file is never read)
 #
 # Exits non-zero if any case fails.
 
@@ -577,12 +588,144 @@ report "oversized sidecar (exit 0, absent-or-unreadable line — INFRA-010)" "$o
 reset_control
 
 # =====================================================================================
+# Case 14: scripts/deploy.env is read as KEY=value data, never executed (CER-024).
+# The fixture repo has no scripts/ directory of its own, so it is created here.
+# FORQSITE_HELP_SITE_URL is unset in the environment unless stated.
+# =====================================================================================
+ENV_FILE="$FIXTURE_REPO/scripts/deploy.env"
+mkdir -p "$FIXTURE_REPO/scripts"
+
+run_drift_check_file_only() {
+  ( unset FORQSITE_HELP_SITE_URL; run_drift_check "$@" )
+}
+
+# --- 14a: accepted forms -------------------------------------------------------------
+check_env_accepted() {
+  local name="$1" status="$2" out="$3"
+  local ok=0 detail=""
+  if [ "$status" -ne 0 ]; then
+    ok=1; detail="expected exit 0, got $status: $out"
+  elif ! printf '%s' "$out" | grep -q "^result .*ok"; then
+    ok=1; detail="no ok result line: $out"
+  fi
+  report "$name" "$ok" "$detail"
+}
+
+reset_control
+cat > "$ENV_FILE" <<ENVEOF
+# deploy.env in the example's form
+FORQSITE_HELP_DEPLOY_HOST="fixture-host-alias"
+
+FORQSITE_HELP_DEPLOY_DIR="/fixture/remote/dir"
+FORQSITE_HELP_SITE_URL="$FIXTURE_URL"
+ENVEOF
+set +e
+out_case14a1="$(run_drift_check_file_only 2>&1)"
+status_case14a1=$?
+set -e
+check_env_accepted "config file, example form (double-quoted URL, comment, blank, other keys; exit 0)" "$status_case14a1" "$out_case14a1"
+
+reset_control
+printf "export FORQSITE_HELP_SITE_URL='%s'\n" "$FIXTURE_URL" > "$ENV_FILE"
+set +e
+out_case14a2="$(run_drift_check_file_only 2>&1)"
+status_case14a2=$?
+set -e
+check_env_accepted "config file, export + single-quoted URL (exit 0)" "$status_case14a2" "$out_case14a2"
+
+reset_control
+printf 'FORQSITE_HELP_SITE_URL=%s\r\n' "$FIXTURE_URL" > "$ENV_FILE"
+set +e
+out_case14a3="$(run_drift_check_file_only 2>&1)"
+status_case14a3=$?
+set -e
+check_env_accepted "config file, bare URL with CRLF ending (exit 0)" "$status_case14a3" "$out_case14a3"
+rm -f "$ENV_FILE"
+
+# --- 14b: payloads stay literal ------------------------------------------------------
+# The evidence is the marker's absence, whatever the exit code.
+PAYLOAD_M1="$WORK_DIR/payload-m1"
+PAYLOAD_M2="$WORK_DIR/payload-m2"
+out_case14b=""
+for form in dollar backtick; do
+  if [ "$form" = "dollar" ]; then
+    marker="$PAYLOAD_M1"; payload="\$(touch $marker)"
+  else
+    marker="$PAYLOAD_M2"; payload="\`touch $marker\`"
+  fi
+  rm -f "$PAYLOAD_M1" "$PAYLOAD_M2"
+  reset_control
+  printf 'FORQSITE_HELP_SITE_URL="%s"\n' "$payload" > "$ENV_FILE"
+  set +e
+  out_payload="$(run_drift_check_file_only 2>&1)"
+  set -e
+  out_case14b="${out_case14b}${out_payload}"$'\n'
+  ok=0
+  detail=""
+  if [ -e "$marker" ]; then
+    ok=1; detail="payload marker created — the config file was executed: $out_payload"
+  fi
+  report "config file, $form payload in FORQSITE_HELP_SITE_URL stays literal (marker absent)" "$ok" "$detail"
+done
+rm -f "$ENV_FILE" "$PAYLOAD_M1" "$PAYLOAD_M2"
+
+# --- 14c: a command line is refused by line number, before any request ---------------
+PAYLOAD_M3="$WORK_DIR/payload-m3"
+rm -f "$PAYLOAD_M3"
+reset_control
+{
+  echo '# line 1'
+  printf 'FORQSITE_HELP_SITE_URL="%s"\n' "$FIXTURE_URL"
+  echo "touch $PAYLOAD_M3"
+} > "$ENV_FILE"
+set +e
+out_case14c="$(run_drift_check_file_only 2>&1)"
+status_case14c=$?
+set -e
+ok=0
+detail=""
+if [ "$status_case14c" -ne 2 ]; then
+  ok=1; detail="expected exit 2, got $status_case14c: $out_case14c"
+elif ! printf '%s' "$out_case14c" | grep -q "line 3"; then
+  ok=1; detail="refusal does not name line 3: $out_case14c"
+elif printf '%s' "$out_case14c" | grep -q "touch"; then
+  ok=1; detail="refusal printed the refused line's content"
+elif [ -e "$PAYLOAD_M3" ]; then
+  ok=1; detail="payload marker created — the config file was executed"
+elif [ -s "$REQUEST_LOG" ]; then
+  ok=1; detail="a request reached the fixture server before the refusal"
+fi
+report "config file, command line (exit 2, names line 3, content not printed, marker absent, no request)" "$ok" "$detail"
+rm -f "$ENV_FILE" "$PAYLOAD_M3"
+
+# --- 14e: a complete environment never reads the file --------------------------------
+PAYLOAD_M4="$WORK_DIR/payload-m4"
+rm -f "$PAYLOAD_M4"
+reset_control
+printf 'this line is not KEY=value\ntouch %s\n' "$PAYLOAD_M4" > "$ENV_FILE"
+set +e
+out_case14e="$( export FORQSITE_HELP_SITE_URL="$FIXTURE_URL"; run_drift_check 2>&1 )"
+status_case14e=$?
+set -e
+ok=0
+detail=""
+if [ "$status_case14e" -ne 0 ]; then
+  ok=1; detail="expected exit 0 with the URL in the environment, got $status_case14e: $out_case14e"
+elif [ -e "$PAYLOAD_M4" ]; then
+  ok=1; detail="payload marker created — the config file was executed"
+fi
+report "config file, malformed but env complete (exit 0, file never read)" "$ok" "$detail"
+rm -f "$ENV_FILE" "$PAYLOAD_M4"
+reset_control
+
+# =====================================================================================
 echo ""
 echo "drift-check-selftest: $PASS_COUNT passed, $FAILURES failed"
 
 echo ""
 echo "--- captured output, all cases (for the hygiene grep) ---"
-printf '%s\n' "$out_case1" "$out_case2" "$out_case3" "${out_case4:-}" "$out_case5" "$out_case6" "$out_case7" "$out_case8" "$out_case9" "$out_case10" "$out_case11" "$out_case12" "$out_case13"
+printf '%s\n' "$out_case1" "$out_case2" "$out_case3" "${out_case4:-}" "$out_case5" "$out_case6" "$out_case7" "$out_case8" "$out_case9" "$out_case10" "$out_case11" "$out_case12" "$out_case13" \
+  "$out_case14a1" "$out_case14a2" "$out_case14a3" "$out_case14b" "$out_case14c" "$out_case14e"
 echo "--- end captured output ---"
 
 if [ "$FAILURES" -ne 0 ]; then

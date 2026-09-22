@@ -6,7 +6,8 @@
 # real POSIX sh, not bash) so that any bash-only quoting the remote command relies on
 # is exposed rather than silently passing (CER-025). Contacts no real host.
 #
-# Cases (see docs/stories/INFRA/INFRA-006.md § Tests, INFRA-011 for 6-7, INFRA-012 for 8-12):
+# Cases (see docs/stories/INFRA/INFRA-006.md § Tests, INFRA-011 for 6-7, INFRA-012 for 8-12,
+# INFRA-013 for 13):
 #   1. missing config   — exit 2, message names both variable names, stub-ssh not invoked
 #   2. dirty tree       — exit 3, message names the dirty bundle, target files untouched
 #   3. happy path       — exit 0, target files match committed bytes, two .bak-<stamp>
@@ -33,6 +34,26 @@
 #                          first stamp as pruned and the second as failed (INFRA-012)
 #  12. no prune on fail — hash-mismatch run over seeded sets: exit 4, nothing deleted, no
 #                          marker written (INFRA-012)
+#  13. config file read as data (CER-024), with HOST and DIR unset in the environment
+#      unless stated:
+#      a. accepted forms  — the example's form (comment, blank line, double-quoted HOST
+#                          and DIR, a SITE_URL line); then `export` + single-quoted DIR;
+#                          then bare values with CRLF line endings: each exit 0, bytes landed
+#      b. payloads        — DIR, and separately SITE_URL, set to "$(touch M)" and to a
+#                          backtick `touch M` in double quotes: every marker absent
+#      c. command line    — line 3 is `touch M3`: exit 2, names line 3, does not print the
+#                          line, M3 absent, ssh never invoked
+#      d. unknown key     — line 2 is UNKNOWN_KEY=<value>: exit 2, names line 2, value not
+#                          printed, ssh never invoked
+#      e. env complete    — env HOST and DIR set, malformed file present: exit 0 (the file
+#                          is never read)
+#      f. precedence      — env DIR a nonexistent path, env HOST unset, file sets both:
+#                          exit 0 into the file's DIR
+#
+# Determinism: deploy.sh refuses a deploy whose one-second backup stamp already exists in
+# its target (INFRA-012). So every deploy run that can reach the backup step starts from a
+# target that was reset (fresh_target, reset_target_state, or a directory never used
+# before), unless the case is asserting that refusal itself.
 #
 # Exits non-zero if any case fails.
 
@@ -115,6 +136,12 @@ export FORQSITE_HELP_DEPLOY_DIR="$FIXTURE_TARGET"
 
 run_deploy() {
   ( cd "$FIXTURE_REPO" && "$DEPLOY_SH" "$@" )
+}
+
+# Clears every backup and verified marker from a target, so the next deploy into it can
+# never collide with an earlier run's one-second stamp (INFRA-012 refuses that, exit 5).
+reset_target_state() {
+  rm -f "$1"/*.bak-* "$1"/.deploy-verified-* 2>/dev/null || true
 }
 
 # =====================================================================================
@@ -235,7 +262,7 @@ git -C "$FIXTURE_REPO" checkout -q -- index.html
 # Case 3: happy path
 # =====================================================================================
 rm -f "$SSH_MARKER"
-rm -f "$FIXTURE_TARGET"/*.bak-* 2>/dev/null || true
+reset_target_state "$FIXTURE_TARGET"
 # Pre-populate the fixture target with stand-in "live" bundles so the deploy has an
 # existing file to back up (matching a real target, which is never empty).
 echo "pre-existing live index bundle" > "$FIXTURE_TARGET/index.html"
@@ -327,7 +354,8 @@ rm -f "$SSH_MARKER"
 # Case 4: hash mismatch
 # =====================================================================================
 rm -f "$SSH_MARKER"
-rm -f "$FIXTURE_TARGET"/*.bak-* 2>/dev/null || true
+# Case 3 deployed into this same target moments ago: clear its backups and marker.
+reset_target_state "$FIXTURE_TARGET"
 : > "$CORRUPT_FLAG"
 
 set +e
@@ -349,7 +377,7 @@ report "hash mismatch (exit 4, names failing bundle)" "$ok" "$detail"
 # Restore the fixture target to a clean, matching state for the next case.
 git -C "$FIXTURE_REPO" show HEAD:index.html > "$FIXTURE_TARGET/index.html"
 git -C "$FIXTURE_REPO" show HEAD:gap-handoff.html > "$FIXTURE_TARGET/gap-handoff.html"
-rm -f "$FIXTURE_TARGET"/*.bak-* 2>/dev/null || true
+reset_target_state "$FIXTURE_TARGET"
 
 # =====================================================================================
 # Case 5: dry run
@@ -679,6 +707,218 @@ else
   done
 fi
 report "no prune on failure (exit 4, every seeded file present, no marker written)" "$ok" "$detail"
+
+# =====================================================================================
+# Case 13: scripts/deploy.env is read as KEY=value data, never executed (CER-024).
+# The fixture repo has no scripts/ directory of its own, so it is created here. Every
+# run that can reach the backup step deploys into ENV_TARGET, and fresh_target resets
+# ENV_TARGET immediately before each such run, so no two runs share a backup stamp.
+# =====================================================================================
+ENV_TARGET="$WORK_DIR/env-target"
+ENV_FILE="$FIXTURE_REPO/scripts/deploy.env"
+mkdir -p "$FIXTURE_REPO/scripts"
+
+# Runs deploy.sh with HOST and DIR unset in the environment (a subshell, so the
+# enclosing environment is unchanged).
+run_deploy_file_only() {
+  ( unset FORQSITE_HELP_DEPLOY_HOST FORQSITE_HELP_DEPLOY_DIR; run_deploy "$@" )
+}
+
+landed_in() {
+  local dir="$1"
+  [ "$(sha256sum "$dir/index.html" 2>/dev/null | cut -d' ' -f1)" = "$committed_index_sha" ] &&
+    [ "$(sha256sum "$dir/gap-handoff.html" 2>/dev/null | cut -d' ' -f1)" = "$committed_gap_sha" ]
+}
+
+# --- 13a: accepted forms -------------------------------------------------------------
+check_accepted() {
+  local name="$1" status="$2" out="$3"
+  local ok=0 detail=""
+  if [ "$status" -ne 0 ]; then
+    ok=1; detail="expected exit 0, got $status: $out"
+  elif ! landed_in "$ENV_TARGET"; then
+    ok=1; detail="committed bytes did not land in the file's DIR"
+  fi
+  report "$name" "$ok" "$detail"
+}
+
+# The example's form: a comment, a blank line, double-quoted HOST and DIR, SITE_URL.
+cat > "$ENV_FILE" <<ENVEOF
+# deploy.env in the example's form
+FORQSITE_HELP_DEPLOY_HOST="fixture-host-alias"
+
+FORQSITE_HELP_DEPLOY_DIR="$ENV_TARGET"
+FORQSITE_HELP_SITE_URL="https://site.example.invalid"
+ENVEOF
+fresh_target "$ENV_TARGET"
+set +e
+out_env_a1="$(run_deploy_file_only 2>&1)"
+status_env_a1=$?
+set -e
+check_accepted "config file, example form (double quotes, comment, blank, SITE_URL; exit 0, bytes landed)" "$status_env_a1" "$out_env_a1"
+
+# export prefix and a single-quoted value.
+cat > "$ENV_FILE" <<ENVEOF
+  # an indented comment
+export FORQSITE_HELP_DEPLOY_HOST="fixture-host-alias"
+export FORQSITE_HELP_DEPLOY_DIR='$ENV_TARGET'
+ENVEOF
+fresh_target "$ENV_TARGET"
+set +e
+out_env_a2="$(run_deploy_file_only 2>&1)"
+status_env_a2=$?
+set -e
+check_accepted "config file, export + single-quoted value (exit 0, bytes landed)" "$status_env_a2" "$out_env_a2"
+
+# Bare values, CRLF line endings.
+printf 'FORQSITE_HELP_DEPLOY_HOST=fixture-host-alias\r\nFORQSITE_HELP_DEPLOY_DIR=%s\r\n' "$ENV_TARGET" > "$ENV_FILE"
+fresh_target "$ENV_TARGET"
+set +e
+out_env_a3="$(run_deploy_file_only 2>&1)"
+status_env_a3=$?
+set -e
+check_accepted "config file, bare values with CRLF endings (exit 0, bytes landed)" "$status_env_a3" "$out_env_a3"
+rm -f "$ENV_FILE"
+
+# --- 13b: payloads stay literal ------------------------------------------------------
+# Each payload would create its marker if the file were ever executed. The evidence is
+# the marker's absence, whatever the exit code.
+PAYLOAD_M1="$WORK_DIR/payload-m1"
+PAYLOAD_M2="$WORK_DIR/payload-m2"
+check_payload() {
+  local name="$1" marker="$2" out="$3"
+  local ok=0 detail=""
+  if [ -e "$marker" ]; then
+    ok=1; detail="payload marker created — the config file was executed: $out"
+  fi
+  report "$name" "$ok" "$detail"
+}
+
+for key in FORQSITE_HELP_DEPLOY_DIR FORQSITE_HELP_SITE_URL; do
+  for form in dollar backtick; do
+    if [ "$form" = "dollar" ]; then
+      marker="$PAYLOAD_M1"; payload="\$(touch $marker)"
+    else
+      marker="$PAYLOAD_M2"; payload="\`touch $marker\`"
+    fi
+    rm -f "$PAYLOAD_M1" "$PAYLOAD_M2"
+    {
+      echo 'FORQSITE_HELP_DEPLOY_HOST="fixture-host-alias"'
+      if [ "$key" = "FORQSITE_HELP_DEPLOY_DIR" ]; then
+        printf '%s="%s"\n' "$key" "$payload"
+      else
+        printf 'FORQSITE_HELP_DEPLOY_DIR="%s"\n' "$ENV_TARGET"
+        printf '%s="%s"\n' "$key" "$payload"
+      fi
+    } > "$ENV_FILE"
+    fresh_target "$ENV_TARGET"
+    set +e
+    out_payload="$(run_deploy_file_only 2>&1)"
+    set -e
+    check_payload "config file, $form payload in $key stays literal (marker absent)" "$marker" "$out_payload"
+  done
+done
+rm -f "$ENV_FILE" "$PAYLOAD_M1" "$PAYLOAD_M2"
+
+# --- 13c: a command line is refused by line number -----------------------------------
+PAYLOAD_M3="$WORK_DIR/payload-m3"
+rm -f "$PAYLOAD_M3" "$SSH_MARKER"
+{
+  echo '# line 1'
+  echo 'FORQSITE_HELP_DEPLOY_HOST="fixture-host-alias"'
+  echo "touch $PAYLOAD_M3"
+  printf 'FORQSITE_HELP_DEPLOY_DIR="%s"\n' "$ENV_TARGET"
+} > "$ENV_FILE"
+set +e
+out_env_c="$(run_deploy_file_only 2>&1)"
+status_env_c=$?
+set -e
+ok=0
+detail=""
+if [ "$status_env_c" -ne 2 ]; then
+  ok=1; detail="expected exit 2, got $status_env_c: $out_env_c"
+elif ! printf '%s' "$out_env_c" | grep -q "line 3"; then
+  ok=1; detail="refusal does not name line 3: $out_env_c"
+elif printf '%s' "$out_env_c" | grep -q "touch"; then
+  ok=1; detail="refusal printed the refused line's content"
+elif [ -e "$PAYLOAD_M3" ]; then
+  ok=1; detail="payload marker created — the config file was executed"
+elif [ -f "$SSH_MARKER" ]; then
+  ok=1; detail="stub-ssh marker present — ssh was invoked before the refusal"
+fi
+report "config file, command line (exit 2, names line 3, content not printed, marker absent, no ssh)" "$ok" "$detail"
+rm -f "$ENV_FILE" "$PAYLOAD_M3"
+
+# --- 13d: an unknown key is refused by line number, its value never printed ----------
+UNKNOWN_VALUE="distinct-unknown-value-7f3a9c"
+rm -f "$SSH_MARKER"
+{
+  echo 'FORQSITE_HELP_DEPLOY_HOST="fixture-host-alias"'
+  echo "UNKNOWN_KEY=$UNKNOWN_VALUE"
+  printf 'FORQSITE_HELP_DEPLOY_DIR="%s"\n' "$ENV_TARGET"
+} > "$ENV_FILE"
+set +e
+out_env_d="$(run_deploy_file_only 2>&1)"
+status_env_d=$?
+set -e
+ok=0
+detail=""
+if [ "$status_env_d" -ne 2 ]; then
+  ok=1; detail="expected exit 2, got $status_env_d: $out_env_d"
+elif ! printf '%s' "$out_env_d" | grep -q "line 2"; then
+  ok=1; detail="refusal does not name line 2: $out_env_d"
+elif printf '%s' "$out_env_d" | grep -qF "$UNKNOWN_VALUE"; then
+  ok=1; detail="refusal printed the unknown key's value"
+elif [ -f "$SSH_MARKER" ]; then
+  ok=1; detail="stub-ssh marker present — ssh was invoked before the refusal"
+fi
+report "config file, unknown key (exit 2, names line 2, value not printed, no ssh)" "$ok" "$detail"
+rm -f "$ENV_FILE"
+
+# --- 13e: a complete environment never reads the file --------------------------------
+PAYLOAD_M4="$WORK_DIR/payload-m4"
+rm -f "$PAYLOAD_M4"
+printf 'this line is not KEY=value\ntouch %s\n' "$PAYLOAD_M4" > "$ENV_FILE"
+fresh_target "$ENV_TARGET"
+set +e
+out_env_e="$( export FORQSITE_HELP_DEPLOY_HOST="fixture-host-alias" FORQSITE_HELP_DEPLOY_DIR="$ENV_TARGET"; run_deploy 2>&1 )"
+status_env_e=$?
+set -e
+ok=0
+detail=""
+if [ "$status_env_e" -ne 0 ]; then
+  ok=1; detail="expected exit 0 with a complete environment, got $status_env_e: $out_env_e"
+elif ! landed_in "$ENV_TARGET"; then
+  ok=1; detail="committed bytes did not land in the environment's DIR"
+elif [ -e "$PAYLOAD_M4" ]; then
+  ok=1; detail="payload marker created — the config file was executed"
+fi
+report "config file, malformed but env complete (exit 0, file never read)" "$ok" "$detail"
+rm -f "$ENV_FILE" "$PAYLOAD_M4"
+
+# --- 13f: precedence — a non-empty file value overrides the environment's ----------
+MISSING_DIR="$WORK_DIR/no-such-target-dir"
+rm -rf "$MISSING_DIR"
+{
+  echo 'FORQSITE_HELP_DEPLOY_HOST="fixture-host-alias"'
+  printf 'FORQSITE_HELP_DEPLOY_DIR="%s"\n' "$ENV_TARGET"
+} > "$ENV_FILE"
+fresh_target "$ENV_TARGET"
+set +e
+out_env_f="$( unset FORQSITE_HELP_DEPLOY_HOST; export FORQSITE_HELP_DEPLOY_DIR="$MISSING_DIR"; run_deploy 2>&1 )"
+status_env_f=$?
+set -e
+ok=0
+detail=""
+if [ "$status_env_f" -ne 0 ]; then
+  ok=1; detail="expected exit 0 into the file's DIR, got $status_env_f: $out_env_f"
+elif ! landed_in "$ENV_TARGET"; then
+  ok=1; detail="committed bytes did not land in the file's DIR"
+elif [ -e "$MISSING_DIR" ]; then
+  ok=1; detail="the environment's DIR was used instead of the file's"
+fi
+report "config file, precedence (env HOST unset, env DIR overridden by the file's; exit 0 into the file's DIR)" "$ok" "$detail"
+rm -f "$ENV_FILE"
 
 export FORQSITE_HELP_DEPLOY_DIR="$FIXTURE_TARGET"
 
