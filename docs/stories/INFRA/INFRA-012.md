@@ -53,6 +53,21 @@ cases proving three things:
 - retention with future-dated verified sets keeps the current set;
 - a hash-mismatch run deletes nothing and writes no marker.
 
+Added after attempt 1's review (2026-09-22):
+- **A file created for the first time is world-readable.** When a bundle or the sidecar does not
+  yet exist on the far side (a fresh target directory, or the first deploy that ships
+  `site-provenance.json`), the file the deploy creates has mode 0644. It must not inherit the
+  `mktemp` stage's 0600 through `cp`. The container's web server may run as a different uid and
+  must be able to read it. An existing file keeps its inode and its mode, unchanged. A deploy
+  selftest case creates a destination that did not exist before and asserts its mode is 0644.
+  Forbidden proxy: an unconditional `chmod` on the live file. On an existing destination it
+  would overwrite a mode the operator set on purpose.
+- **A prune report says what was pruned.** If pruning fails partway through, the output names
+  which stamps were removed before the failure and which one failed. It never prints a blanket
+  "no backups pruned" once any removal succeeded. A deploy selftest case makes the second of two
+  prune removals fail and asserts the first stamp is reported as pruned. Forbidden proxy: a
+  message reworded to say nothing about which sets remain.
+
 Forbidden proxies: pruning that simply keeps the newest N stamps by sort order, which drops the
 current set under clock skew and can drop a failed deploy's rollback copy; and a staging name
 made "random" locally, such as `$RANDOM` or `date +%N`, while the far side still opens it with
