@@ -2,7 +2,7 @@
 id: INFRA-007
 rail: INFRA
 title: A drift check that compares served bytes to committed bytes
-status: draft
+status: complete
 phase: "11"
 story_class: code
 auth_gated: false
