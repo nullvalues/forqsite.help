@@ -35,6 +35,22 @@
 #                                 is not the fixture URL; hygiene: configured base URL/
 #                                 host/port AND the redirect target absent, the 3xx
 #                                 status still named
+#   10. hostile sidecar (INFRA-010) — the served sidecar's four fields carry ESC/CSI,
+#                                 CR and BEL bytes, with the index.html claim set to
+#                                 `\033[m` followed by the real served sha256; exit 6
+#                                 (the raw claim disagrees even though it sanitises to
+#                                 the correct hash), no control byte in the captured
+#                                 output, and the removed-characters line present
+#   11. file:// refused (INFRA-010) — FORQSITE_HELP_SITE_URL points at a local
+#                                 directory holding planted copies of the fixture's own
+#                                 HEAD bundles; exit 4, the scheme refusal is named, and
+#                                 the configured path is absent from the output
+#   12. oversized bundle (INFRA-010) — the server streams an unbounded body with no
+#                                 Content-Length for index.html; exit 4, the size-limit
+#                                 label, well before --max-time, and not "timed out"
+#   13. oversized sidecar (INFRA-010) — as above but for site-provenance.json, with the
+#                                 bundles otherwise matching; exit 0, and the sidecar
+#                                 still reports "absent or unreadable"
 #
 # Exits non-zero if any case fails.
 
@@ -106,7 +122,7 @@ cp "$FIXTURE_REPO/index.html" "$SERVE_DIR/index.html"
 cp "$FIXTURE_REPO/gap-handoff.html" "$SERVE_DIR/gap-handoff.html"
 
 reset_control() {
-  rm -f "$CONTROL_DIR"/override-* "$CONTROL_DIR"/404-* "$CONTROL_DIR"/redirect-* 2>/dev/null || true
+  rm -f "$CONTROL_DIR"/override-* "$CONTROL_DIR"/404-* "$CONTROL_DIR"/redirect-* "$CONTROL_DIR"/stream-* 2>/dev/null || true
   : > "$REQUEST_LOG"
 }
 reset_control
@@ -120,7 +136,11 @@ reset_control
 # $CONTROL_DIR/redirect-<name> exists, a request for /<name> gets a 302 whose Location
 # is that file's contents (INFRA-009) — used to prove the redirect target is withheld
 # from drift-check.sh's output rather than merely proving the base URL happens to be
-# absent, its target is deliberately not the fixture URL. Every request is logged to
+# absent, its target is deliberately not the fixture URL. If $CONTROL_DIR/stream-<name>
+# exists, a request for /<name> gets a 200 with no Content-Length, and the server
+# writes chunks until the client disconnects (INFRA-010) — this is the shape needed to
+# prove --max-filesize is enforced mid-transfer, not merely against a declared
+# Content-Length a hostile origin would simply omit. Every request is logged to
 # $REQUEST_LOG.
 cat > "$SERVER_SCRIPT" <<'PYEOF'
 import http.server
@@ -148,6 +168,16 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_response(302)
             self.send_header("Location", location)
             self.end_headers()
+            return
+        stream = os.path.join(CONTROL_DIR, "stream-" + name)
+        if os.path.exists(stream):
+            self.send_response(200)
+            self.end_headers()
+            try:
+                while True:
+                    self.wfile.write(b"x" * 65536)
+            except (BrokenPipeError, ConnectionResetError):
+                pass
             return
         override = os.path.join(CONTROL_DIR, "override-" + name)
         target = override if os.path.exists(override) else os.path.join(SERVE_DIR, name)
@@ -431,13 +461,128 @@ fi
 report "redirect (exit 4, hygiene: no base URL/host/port/redirect target, 3xx status named — INFRA-009)" "$ok" "$detail"
 reset_control
 
+HEAD_INDEX_SHA="$(git -C "$FIXTURE_REPO" show HEAD:index.html | sha256sum | cut -d' ' -f1)"
+
+# =====================================================================================
+# Case 10: hostile sidecar (INFRA-010)
+# =====================================================================================
+reset_control
+python3 - "$CONTROL_DIR/override-site-provenance.json" "$HEAD_INDEX_SHA" <<'PYEOF'
+import sys
+
+dst, head_index_sha = sys.argv[1], sys.argv[2]
+noise = "\x1b[m\r\x07"
+fake_gap_sha = "f" * 64
+lines = [
+    "{",
+    '  "repo_commit": "' + noise + 'abc123def456",',
+    '  "deployed_at": "' + noise + '2026-09-22T00:00:00Z",',
+    '  "index.html": "\x1b[m' + head_index_sha + '",',
+    '  "gap-handoff.html": "' + noise + fake_gap_sha + '"',
+    "}",
+    "",
+]
+with open(dst, "w") as f:
+    f.write("\n".join(lines))
+PYEOF
+
+set +e
+out_case10="$(run_drift_check 2>&1)"
+status_case10=$?
+set -e
+
+ok=0
+detail=""
+stripped_case10="$(printf '%s' "$out_case10" | tr -d '\n')"
+if [ "$status_case10" -ne 6 ]; then
+  ok=1; detail="expected exit 6, got $status_case10: $out_case10"
+elif printf '%s' "$stripped_case10" | LC_ALL=C grep -q '[[:cntrl:]]'; then
+  ok=1; detail="captured output still contains a control byte (INFRA-010)"
+elif ! printf '%s' "$out_case10" | grep -q "characters outside"; then
+  ok=1; detail="removed-characters line not present"
+fi
+report "hostile sidecar (exit 6, no control bytes in output, removed-characters line present — INFRA-010)" "$ok" "$detail"
+reset_control
+
+# =====================================================================================
+# Case 11: file:// refused (INFRA-010)
+# =====================================================================================
+reset_control
+PLANT_DIR="$WORK_DIR/plant"
+mkdir -p "$PLANT_DIR"
+git -C "$FIXTURE_REPO" show HEAD:index.html > "$PLANT_DIR/index.html"
+git -C "$FIXTURE_REPO" show HEAD:gap-handoff.html > "$PLANT_DIR/gap-handoff.html"
+export FORQSITE_HELP_SITE_URL="file://$PLANT_DIR"
+
+set +e
+out_case11="$(run_drift_check 2>&1)"
+status_case11=$?
+set -e
+
+ok=0
+detail=""
+if [ "$status_case11" -ne 4 ]; then
+  ok=1; detail="expected exit 4, got $status_case11: $out_case11"
+elif ! printf '%s' "$out_case11" | grep -qi "scheme refused"; then
+  ok=1; detail="output did not name the refused scheme (INFRA-010)"
+elif printf '%s' "$out_case11" | grep -qF "$WORK_DIR"; then
+  ok=1; detail="output leaked the configured path (INFRA-010)"
+fi
+report "file:// refused (exit 4, scheme refusal named, configured path absent — INFRA-010)" "$ok" "$detail"
+
+export FORQSITE_HELP_SITE_URL="$FIXTURE_URL"
+
+# =====================================================================================
+# Case 12: oversized bundle (INFRA-010)
+# =====================================================================================
+reset_control
+: > "$CONTROL_DIR/stream-index.html"
+
+set +e
+out_case12="$(run_drift_check 2>&1)"
+status_case12=$?
+set -e
+
+ok=0
+detail=""
+if [ "$status_case12" -ne 4 ]; then
+  ok=1; detail="expected exit 4, got $status_case12: $out_case12"
+elif ! printf '%s' "$out_case12" | grep -qi "size limit"; then
+  ok=1; detail="output did not name the size-limit label (INFRA-010)"
+elif printf '%s' "$out_case12" | grep -qi "timed out"; then
+  ok=1; detail="fetch ran to timeout instead of being cut short by --max-filesize"
+fi
+report "oversized bundle (exit 4, size-limit label, not timed out — INFRA-010)" "$ok" "$detail"
+reset_control
+
+# =====================================================================================
+# Case 13: oversized sidecar (INFRA-010)
+# =====================================================================================
+reset_control
+: > "$CONTROL_DIR/stream-site-provenance.json"
+
+set +e
+out_case13="$(run_drift_check 2>&1)"
+status_case13=$?
+set -e
+
+ok=0
+detail=""
+if [ "$status_case13" -ne 0 ]; then
+  ok=1; detail="expected exit 0, got $status_case13: $out_case13"
+elif ! printf '%s' "$out_case13" | grep -q "absent or unreadable"; then
+  ok=1; detail="output did not fall back to the absent-or-unreadable line (INFRA-010)"
+fi
+report "oversized sidecar (exit 0, absent-or-unreadable line — INFRA-010)" "$ok" "$detail"
+reset_control
+
 # =====================================================================================
 echo ""
 echo "drift-check-selftest: $PASS_COUNT passed, $FAILURES failed"
 
 echo ""
 echo "--- captured output, all cases (for the hygiene grep) ---"
-printf '%s\n' "$out_case1" "$out_case2" "$out_case3" "${out_case4:-}" "$out_case5" "$out_case6" "$out_case7" "$out_case8" "$out_case9"
+printf '%s\n' "$out_case1" "$out_case2" "$out_case3" "${out_case4:-}" "$out_case5" "$out_case6" "$out_case7" "$out_case8" "$out_case9" "$out_case10" "$out_case11" "$out_case12" "$out_case13"
 echo "--- end captured output ---"
 
 if [ "$FAILURES" -ne 0 ]; then

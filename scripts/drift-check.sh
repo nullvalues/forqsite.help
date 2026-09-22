@@ -49,11 +49,17 @@
 #   2   configuration missing (FORQSITE_HELP_SITE_URL)
 #   3   drift detected — at least one bundle's served bytes do not match the ref
 #       (outranks 6: always the exit when both are true)
-#   4   fetch failure (non-2xx, a redirect, a connection failure, or a timeout)
+#   4   fetch failure (non-2xx, a redirect, a connection failure, a timeout, a refused
+#       scheme — only http/https are permitted, so e.g. a file:// base URL is refused
+#       rather than read as a local path — or a response that exceeded the configured
+#       size bound)
 #   5   a bundle is not tracked at the ref
 #   6   provenance sidecar contradiction — the sidecar's claimed sha256 for a bundle
 #       disagrees with that bundle's served bytes, and no bundle drifted (exit 3 takes
-#       precedence whenever both conditions hold)
+#       precedence whenever both conditions hold). This decision is always made on the
+#       sidecar's raw extracted claim, never the sanitised display copy printed in the
+#       report (INFRA-010) — a claim that merely *sanitises* to the correct hash still
+#       disagrees on the bytes that were actually claimed.
 #   64  usage error (unrecognised argument, or --ref given with no value)
 #
 # Notes:
@@ -87,11 +93,42 @@
 #     alone — the sidecar's repo_commit, its deployed_at, its claimed bundle sha256
 #     values, and its mere presence are never the basis of that decision, only ever
 #     reported alongside it.
+#   - Both fetches restrict curl to `--proto '=http,https'` (INFRA-010/CER-021): the
+#     origin is untrusted, and without this a `file://` (or other scheme) base URL
+#     would turn this script into a local-file reader that reports "ok" against
+#     whatever a caller planted at that path, never having made a network request at
+#     all. Both fetches also pass a `--max-filesize` bound (16 MiB for a bundle,
+#     64 KiB for the sidecar — see BUNDLE_MAX_BYTES/SIDECAR_MAX_BYTES below): without
+#     one, an origin that streams an unbounded body with no `Content-Length` can hold
+#     the scratch directory (and this script) for the whole --max-time budget. curl
+#     >= 8.4 enforces `--max-filesize` mid-transfer, against the actual bytes received;
+#     older curl only checks a declared `Content-Length` header up front, so an
+#     unbounded stream with no such header runs to --max-time on those versions
+#     instead of being cut short. This script does not gate on curl's version — the
+#     dependency is documented here, not enforced.
+#   - Every sidecar field this script prints is a *display copy*, never the raw
+#     extracted value (INFRA-010/CER-026): the raw value is reduced with
+#     `LC_ALL=C tr -dc` to the characters that field's own class allows (hex digits for
+#     repo_commit and both sha256 claims, `[0-9TZ:-]` for deployed_at) and length-capped,
+#     so a hostile sidecar cannot smuggle ANSI escape sequences, carriage returns, or
+#     other control bytes into a report an operator reads and may paste into a
+#     committed record. The emptiness check and the claimed-vs-served sha256 comparison
+#     that decides exit 6 are always made on the *raw* value, never the display copy —
+#     comparing the display copy would be exactly the proxy this script refuses: a
+#     claim that sanitises to the correct hash is not the same claim as the correct
+#     hash. When a display copy differs from its raw value, one fixed line says so;
+#     that line never contains anything taken from the origin.
 
 set -euo pipefail
 
 BUNDLES=(index.html gap-handoff.html)
 REF="HEAD"
+
+# Fetch size bounds (INFRA-010/CER-021), each defined once here rather than inline at
+# every curl call site.
+BUNDLE_MAX_BYTES=$((16 * 1024 * 1024))   # ~30x today's largest bundle — bundles are
+                                          # self-contained and inline their own fonts
+SIDECAR_MAX_BYTES=$((64 * 1024))         # the sidecar is a few hundred bytes
 
 # --- Argument parsing --------------------------------------------------------------
 while [ "$#" -gt 0 ]; do
@@ -136,16 +173,20 @@ fi
 
 BASE_URL="${BASE_URL%/}"
 
-# --- Map a curl exit code to a short, destination-free label (INFRA-009) ------------
+# --- Map a curl exit code to a short, destination-free label (INFRA-009, INFRA-010) --
 # curl's own exit code carries the distinction this script must preserve on a
 # connection-failure path (refused vs unresolved vs timed out) without embedding the
 # destination the way curl's stderr text does. Unmapped codes still name the code and
-# point at curl(1) rather than collapsing to a bare "fetch failed".
+# point at curl(1) rather than collapsing to a bare "fetch failed". Neither the scheme
+# label (1) nor the size-limit label (63) below interpolates any configured value —
+# both are fixed strings naming the class of failure, not the specific origin.
 curl_failure_label() {
   case "$1" in
+    1) echo "scheme refused — only http and https are permitted" ;;
     6) echo "could not resolve host" ;;
     7) echo "failed to connect" ;;
     28) echo "timed out" ;;
+    63) echo "response exceeded the configured size limit" ;;
     *) echo "see curl(1) for exit code $1" ;;
   esac
 }
@@ -165,6 +206,8 @@ fetch_bundle() {
   local out status
   set +e
   out="$(curl --silent --show-error \
+       --proto '=http,https' \
+       --max-filesize "$BUNDLE_MAX_BYTES" \
        --header 'Accept-Encoding: identity' \
        --header 'Cache-Control: no-cache' \
        --connect-timeout 10 --max-time 60 \
@@ -211,6 +254,8 @@ fetch_provenance() {
   local out status
   set +e
   out="$(curl --silent --show-error \
+       --proto '=http,https' \
+       --max-filesize "$SIDECAR_MAX_BYTES" \
        --header 'Accept-Encoding: identity' \
        --header 'Cache-Control: no-cache' \
        --connect-timeout 10 --max-time 60 \
@@ -316,16 +361,38 @@ if fetch_provenance "$SCRATCH"; then
      [ -z "$claimed_index_sha" ] || [ -z "$claimed_gap_sha" ]; then
     echo "provenance         absent or unreadable — the bundle result above does not depend on it"
   else
-    declare -A CLAIMED_SHA
+    # Display copies only (INFRA-010/CER-026): each raw claim above is reduced to the
+    # characters its own field's class allows and length-capped. The emptiness check
+    # above and the CLAIMED_SHA vs SERVED_SHA comparison below stay on the raw values —
+    # only what is printed is sanitised.
+    display_commit="$(printf '%s' "$claimed_commit" | LC_ALL=C tr -dc '0-9a-f')"
+    display_commit="${display_commit:0:64}"
+    display_deployed_at="$(printf '%s' "$claimed_deployed_at" | LC_ALL=C tr -dc '0-9TZ:-')"
+    display_deployed_at="${display_deployed_at:0:20}"
+    display_index_sha="$(printf '%s' "$claimed_index_sha" | LC_ALL=C tr -dc '0-9a-f')"
+    display_index_sha="${display_index_sha:0:64}"
+    display_gap_sha="$(printf '%s' "$claimed_gap_sha" | LC_ALL=C tr -dc '0-9a-f')"
+    display_gap_sha="${display_gap_sha:0:64}"
+
+    if [ "$display_commit" != "$claimed_commit" ] || \
+       [ "$display_deployed_at" != "$claimed_deployed_at" ] || \
+       [ "$display_index_sha" != "$claimed_index_sha" ] || \
+       [ "$display_gap_sha" != "$claimed_gap_sha" ]; then
+      echo "provenance         one or more claimed fields contained characters outside that field's expected class; removed before display"
+    fi
+
+    declare -A CLAIMED_SHA DISPLAY_SHA
     CLAIMED_SHA["index.html"]="$claimed_index_sha"
     CLAIMED_SHA["gap-handoff.html"]="$claimed_gap_sha"
+    DISPLAY_SHA["index.html"]="$display_index_sha"
+    DISPLAY_SHA["gap-handoff.html"]="$display_gap_sha"
     printf 'provenance         claims %s deployed %s  (claim, not the basis of the result above)\n' \
-      "${claimed_commit:0:7}" "$claimed_deployed_at"
+      "${display_commit:0:7}" "$display_deployed_at"
     for bundle in "${BUNDLES[@]}"; do
       if [ "${CLAIMED_SHA[$bundle]}" != "${SERVED_SHA[$bundle]}" ]; then
         PROVENANCE_CONTRADICTION=1
         printf '  provenance claim for %-18s disagrees with served bytes\n' "$bundle"
-        printf '    claimed           %s\n' "${CLAIMED_SHA[$bundle]}"
+        printf '    claimed           %s\n' "${DISPLAY_SHA[$bundle]}"
         printf '    served            %s\n' "${SERVED_SHA[$bundle]}"
       fi
     done
