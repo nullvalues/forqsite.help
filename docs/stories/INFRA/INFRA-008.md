@@ -2,7 +2,7 @@
 id: INFRA-008
 rail: INFRA
 title: Site provenance a reader and a check can both see
-status: draft
+status: complete
 phase: "11"
 story_class: code
 auth_gated: false
