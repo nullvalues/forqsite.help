@@ -122,7 +122,13 @@ those tables rather than restating them:
   "In place" is required, not stylistic: the remote bind mount follows the file's inode, so
   a rename-over would leave the container serving an old, unlinked inode while the deploy
   reported success. After both bundles are copied and hash-verified, `deploy.sh` generates
-  the provenance sidecar (below) and deploys it the same way.
+  the provenance sidecar (below) and deploys it the same way. Retention is bounded: once
+  every file of a deploy has verified, that deploy's backup set is marked verified and
+  verified sets beyond a stated count (a constant in the script's header) are pruned, while
+  the set just made and any set without a verified marker — such as a failed deploy's
+  rollback copy — are always kept. The script assumes the remote directory is writable only
+  by the deploy account: its unpredictable staging names and noclobber backups narrow a
+  co-tenant's symlink race there, but do not make a shared directory safe.
 - `scripts/drift-check.sh` — the served-bytes half of the same invariant. It fetches each
   bundle over HTTP from the configured site and hashes the response bytes, then hashes
   `git show <ref>:<bundle>`, and compares the two sha256 values — never the file sitting in

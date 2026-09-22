@@ -19,6 +19,28 @@
 #     sequence. The sidecar is written last, deliberately: it asserts "this commit is
 #     deployed", and writing it before the bundles land would publish that claim even
 #     if a later bundle copy then failed.
+#   - Stages every remote write unpredictably (CER-023). Each file's bytes are streamed
+#     into a stage created on the far side by `mktemp` in the remote directory (template
+#     ./.<name>.deploy-XXXXXXXXXX: an unpredictable name, created exclusively), then
+#     copied over the live file in place, and the stage is removed whether the steps
+#     succeed or fail. A far side with no `mktemp` is a remote failure (exit 5). A file
+#     that did not exist before is created mode 0644, so the web server's account can
+#     read it; an existing file keeps its inode and its mode unchanged.
+#   - Writes each backup with noclobber. <name>.bak-<stamp> is refused (exit 5) if that
+#     name already exists in any form, including a dangling symlink; otherwise it is
+#     written under `set -C`, so a name appearing between the check and the write makes
+#     the write fail instead of following it.
+#   - Bounds retention (CER-027). Only after both bundles and the sidecar have verified,
+#     and never on any failure path, it writes a .deploy-verified-<stamp> marker (with
+#     noclobber) and prunes verified backup sets beyond BACKUP_KEEP (a constant, below).
+#     The set this deploy just made is always kept. A set without a marker — the
+#     rollback copy of a deploy that failed verification, or a set older than this
+#     retention scheme — is never pruned; remove such sets by hand when no longer
+#     wanted. If pruning fails partway, the report names the stamps already pruned and
+#     the one that failed.
+#   - Precondition: the remote directory should be writable only by the deploy account.
+#     The mktemp staging and noclobber backups narrow the symlink race another account
+#     could run in that directory; they do not make a shared directory safe.
 #   - Prints a pasteable success record. Never runs docker, docker compose, systemctl,
 #     or any container/service restart — including for the one-time bind-mount this
 #     script's sidecar requires. That mount (docker-compose.yml) and the container
@@ -40,7 +62,10 @@
 #      ^[A-Za-z0-9._][A-Za-z0-9._-]*$ (letters, digits, ., _, -; may not begin with -)
 #   3  dirty-tree refusal (untracked at the ref, or working tree / index differs)
 #   4  hash verification failure (remote bytes do not match the ref's bytes)
-#   5  transport/remote failure (ssh or a remote command failed)
+#   5  transport/remote failure (ssh or a remote command failed; the remote has no
+#      mktemp or sha256sum; a backup name already exists; or, after every file
+#      verified, the marker or prune step failed — the message then says the files
+#      verified and names any stamps pruned before the failure)
 #
 # Notes:
 #   - nginx.conf is also bind-mounted into the container, but unlike the two bundles a
@@ -55,6 +80,9 @@
 set -euo pipefail
 
 BUNDLES=(index.html gap-handoff.html)
+# Verified backup sets kept on the far side, counting the set this deploy makes.
+# A stated constant, not configuration.
+BACKUP_KEEP=5
 REF="HEAD"
 DRY_RUN=0
 
@@ -129,6 +157,39 @@ sq() {
   printf "'%s'" "$s"
 }
 
+# --- Remote command builders ---------------------------------------------------------
+# Backup: refuse if the backup name exists in any form (a dangling symlink included),
+# otherwise write it under noclobber so a name planted between the check and the write
+# makes the write fail rather than follow it.
+remote_backup_cmd() {
+  local name="$1" bak="$1.bak-$STAMP"
+  printf '%s' "cd $(sq "$DIR") || exit 1
+if [ -f $(sq "$name") ]; then
+  if [ -e $(sq "$bak") ] || [ -L $(sq "$bak") ]; then
+    echo $(sq "deploy.sh: backup name already exists for ${name}") >&2
+    exit 5
+  fi
+  set -C
+  cat $(sq "$name") > $(sq "$bak")
+fi"
+}
+
+# Copy: stream stdin into a stage made by the far side's mktemp (unpredictable name,
+# created exclusively), copy the stage over the live file in place (never mv — the bind
+# mount follows the inode), and remove the stage on every exit path. A file created for
+# the first time gets mode 0644 rather than the stage's 0600; an existing file keeps
+# its inode and mode, so the live file is never chmod-ed unconditionally.
+remote_copy_cmd() {
+  local name="$1"
+  printf '%s' "cd $(sq "$DIR") || exit 1
+if ! command -v mktemp >/dev/null 2>&1; then echo 'deploy.sh: remote has no mktemp' >&2; exit 5; fi
+stage=\$(mktemp $(sq "./.${name}.deploy-XXXXXXXXXX")) || exit 1
+trap 'rm -f -- \"\$stage\"' EXIT
+trap 'exit 1' HUP INT TERM
+if [ -e $(sq "$name") ] || [ -L $(sq "$name") ]; then created=0; else created=1; fi
+cat > \"\$stage\" && cp -- \"\$stage\" $(sq "$name") && if [ \"\$created\" -eq 1 ]; then chmod 0644 $(sq "$name"); fi"
+}
+
 # --- Dirty check (before any network contact) -------------------------------------
 dirty_found=0
 for bundle in "${BUNDLES[@]}"; do
@@ -163,6 +224,7 @@ if [ "$DRY_RUN" -eq 1 ]; then
   done
   echo "deploy.sh: would generate and deploy site-provenance.json (after both bundles verify):"
   "$MAKE_PROVENANCE_SH" --ref "$REF"
+  echo "deploy.sh: would mark stamp ${STAMP} verified and prune verified backup sets beyond ${BACKUP_KEEP} (never this deploy's set, never a set without a marker)"
   exit 0
 fi
 
@@ -172,19 +234,16 @@ declare -A LOCAL_SHA
 
 for bundle in "${BUNDLES[@]}"; do
   LOCAL_SHA["$bundle"]="$(git show "${REF}:${bundle}" | sha256sum | cut -d' ' -f1)"
-  tmp_name=".${bundle}.deploy-${STAMP}.tmp"
-
   # Step 1: backup the live file on the far side, if present.
-  backup_cmd="cd $(sq "$DIR") && if [ -f $(sq "$bundle") ]; then cp -p $(sq "$bundle") $(sq "${bundle}.bak-${STAMP}"); fi"
-  if ! ssh "$HOST" "$backup_cmd"; then
+  if ! ssh "$HOST" "$(remote_backup_cmd "$bundle")"; then
     echo "deploy.sh: remote backup step failed for ${bundle}" >&2
     exit 5
   fi
 
-  # Step 2: stream the ref's bytes to a temp file, then overwrite the live file in
-  # place (never rename over it — see header note on bind-mount inode following).
-  copy_cmd="cd $(sq "$DIR") && cat > $(sq "$tmp_name") && cp $(sq "$tmp_name") $(sq "$bundle") && rm -f $(sq "$tmp_name")"
-  if ! git show "${REF}:${bundle}" | ssh "$HOST" "$copy_cmd"; then
+  # Step 2: stream the ref's bytes to a mktemp stage on the far side, then overwrite
+  # the live file in place (never rename over it — see header note on bind-mount
+  # inode following).
+  if ! git show "${REF}:${bundle}" | ssh "$HOST" "$(remote_copy_cmd "$bundle")"; then
     echo "deploy.sh: remote copy step failed for ${bundle}" >&2
     exit 5
   fi
@@ -218,19 +277,17 @@ fi
 SIDECAR_NAME="site-provenance.json"
 SIDECAR_CONTENT="$("$MAKE_PROVENANCE_SH" --ref "$REF")"
 SIDECAR_LOCAL_SHA="$(printf '%s' "$SIDECAR_CONTENT" | sha256sum | cut -d' ' -f1)"
-sidecar_tmp_name=".${SIDECAR_NAME}.deploy-${STAMP}.tmp"
 
 # Step 1: backup the live sidecar on the far side, if present.
-sidecar_backup_cmd="cd $(sq "$DIR") && if [ -f $(sq "$SIDECAR_NAME") ]; then cp -p $(sq "$SIDECAR_NAME") $(sq "${SIDECAR_NAME}.bak-${STAMP}"); fi"
-if ! ssh "$HOST" "$sidecar_backup_cmd"; then
+if ! ssh "$HOST" "$(remote_backup_cmd "$SIDECAR_NAME")"; then
   echo "deploy.sh: remote backup step failed for ${SIDECAR_NAME}" >&2
   exit 5
 fi
 
-# Step 2: stream the generated bytes to a temp file, then overwrite the live file in
-# place (never rename over it — see header note on bind-mount inode following).
-sidecar_copy_cmd="cd $(sq "$DIR") && cat > $(sq "$sidecar_tmp_name") && cp $(sq "$sidecar_tmp_name") $(sq "$SIDECAR_NAME") && rm -f $(sq "$sidecar_tmp_name")"
-if ! printf '%s' "$SIDECAR_CONTENT" | ssh "$HOST" "$sidecar_copy_cmd"; then
+# Step 2: stream the generated bytes to a mktemp stage on the far side, then overwrite
+# the live file in place (never rename over it — see header note on bind-mount inode
+# following).
+if ! printf '%s' "$SIDECAR_CONTENT" | ssh "$HOST" "$(remote_copy_cmd "$SIDECAR_NAME")"; then
   echo "deploy.sh: remote copy step failed for ${SIDECAR_NAME}" >&2
   exit 5
 fi
@@ -249,6 +306,71 @@ if [ "$SIDECAR_REMOTE_SHA" != "$SIDECAR_LOCAL_SHA" ]; then
   exit 4
 fi
 
+# --- Retention (CER-027): only reached once both bundles and the sidecar verified ----
+# Mark this deploy's backup set verified, then prune verified sets beyond BACKUP_KEEP.
+# A set without a marker (a failed deploy's rollback copy, or a set older than this
+# scheme) is never a candidate. The current stamp is dropped before counting, so it is
+# kept even when other stamps sort after it (clock skew).
+MARKER_PREFIX=".deploy-verified-"
+marker_name="${MARKER_PREFIX}${STAMP}"
+marker_cmd="cd $(sq "$DIR") || exit 1
+if [ -e $(sq "$marker_name") ] || [ -L $(sq "$marker_name") ]; then echo 'deploy.sh: verified marker name already exists' >&2; exit 5; fi
+set -C
+: > $(sq "$marker_name")"
+if ! ssh "$HOST" "$marker_cmd"; then
+  echo "deploy.sh: every file verified, but the verified marker for stamp ${STAMP} could not be written; no backups were pruned" >&2
+  exit 5
+fi
+
+list_cmd="cd $(sq "$DIR") || exit 1
+for f in ${MARKER_PREFIX}*; do if [ -e \"\$f\" ] || [ -L \"\$f\" ]; then printf '%s\\n' \"\$f\"; fi; done"
+if ! marker_listing="$(ssh "$HOST" "$list_cmd")"; then
+  echo "deploy.sh: every file verified, but listing verified markers failed; no backups were pruned" >&2
+  exit 5
+fi
+
+# The listing is untrusted: keep only names whose stamp has the exact stamp shape.
+verified_stamps=()
+while IFS= read -r line; do
+  s="${line#"$MARKER_PREFIX"}"
+  [ "$s" != "$line" ] || continue
+  [[ "$s" =~ ^[0-9]{8}T[0-9]{6}Z$ ]] || continue
+  [ "$s" != "$STAMP" ] || continue
+  verified_stamps+=("$s")
+done <<< "$marker_listing"
+
+# Newest BACKUP_KEEP - 1 other verified stamps are kept; the rest are pruned, oldest
+# first.
+PRUNE_STAMPS=()
+if [ "${#verified_stamps[@]}" -gt 0 ]; then
+  mapfile -t sorted_desc < <(printf '%s\n' "${verified_stamps[@]}" | sort -u -r)
+  if [ "${#sorted_desc[@]}" -gt $((BACKUP_KEEP - 1)) ]; then
+    mapfile -t PRUNE_STAMPS < <(printf '%s\n' "${sorted_desc[@]:$((BACKUP_KEEP - 1))}" | sort)
+  fi
+fi
+
+PRUNED=()
+for s in "${PRUNE_STAMPS[@]}"; do
+  # Backups first, marker last: a set whose backups could not all be removed keeps
+  # its marker, so a later deploy retries it.
+  prune_cmd="cd $(sq "$DIR") || exit 1
+rm -f -- $(sq "index.html.bak-${s}") $(sq "gap-handoff.html.bak-${s}") $(sq "site-provenance.json.bak-${s}") && rm -f -- $(sq "${MARKER_PREFIX}${s}")"
+  if ! ssh "$HOST" "$prune_cmd"; then
+    echo "deploy.sh: every file verified, but pruning failed at backup set ${s} (that set may be partly removed; while its marker remains, a later deploy retries it)" >&2
+    if [ "${#PRUNED[@]}" -gt 0 ]; then
+      echo "deploy.sh: pruned before the failure: ${PRUNED[*]}" >&2
+    else
+      echo "deploy.sh: pruned before the failure: none — no backups were pruned" >&2
+    fi
+    not_attempted=("${PRUNE_STAMPS[@]:$(( ${#PRUNED[@]} + 1 ))}")
+    if [ "${#not_attempted[@]}" -gt 0 ]; then
+      echo "deploy.sh: not attempted after the failure: ${not_attempted[*]}" >&2
+    fi
+    exit 5
+  fi
+  PRUNED+=("$s")
+done
+
 # --- Success record --------------------------------------------------------------------
 RESOLVED_REF="$(git rev-parse "${REF}")"
 
@@ -258,6 +380,11 @@ echo "index.html         ${LOCAL_SHA[index.html]}  verified"
 echo "gap-handoff.html   ${LOCAL_SHA[gap-handoff.html]}  verified"
 echo "site-provenance.json   ${SIDECAR_LOCAL_SHA}  verified"
 echo "backups   index.html.bak-${STAMP}, gap-handoff.html.bak-${STAMP}, site-provenance.json.bak-${STAMP}"
+if [ "${#PRUNED[@]}" -gt 0 ]; then
+  echo "pruned    ${PRUNED[*]}"
+else
+  echo "pruned    none"
+fi
 echo "target    the configured per-site directory, via the configured ssh alias"
 echo "next      run the drift check to confirm the bytes a request returns (INFRA-007); on a"
 echo "          host that has never served site-provenance.json, first add its bind-mount to"

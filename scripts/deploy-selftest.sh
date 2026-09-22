@@ -6,7 +6,7 @@
 # real POSIX sh, not bash) so that any bash-only quoting the remote command relies on
 # is exposed rather than silently passing (CER-025). Contacts no real host.
 #
-# Cases (see docs/stories/INFRA/INFRA-006.md § Tests, INFRA-011 for 6-8):
+# Cases (see docs/stories/INFRA/INFRA-006.md § Tests, INFRA-011 for 6-7, INFRA-012 for 8-12):
 #   1. missing config   — exit 2, message names both variable names, stub-ssh not invoked
 #   2. dirty tree       — exit 3, message names the dirty bundle, target files untouched
 #   3. happy path       — exit 0, target files match committed bytes, two .bak-<stamp>
@@ -19,6 +19,20 @@
 #                          a space (CER-019)
 #   7. POSIX quoting    — remote directory name containing a space, a single quote and a
 #                          tab; exit 0, bytes match, under the dash-backed stub ssh (CER-025)
+#   8. staging symlinks — symlinks to a sentinel at every old-scheme stage name for the
+#                          run's window: exit 0, bytes match, sentinel unchanged, no stage
+#                          left; symlinks at index.html.bak-<S>: exit 5, sentinel unchanged
+#                          (INFRA-012, CER-023)
+#   9. first-write mode — under umask 077, files that did not exist are created 0644; an
+#                          existing file keeps its inode and its 0640 mode (INFRA-012)
+#  10. retention        — six past and BACKUP_KEEP future-dated verified sets, one
+#                          unverified set, one malformed marker: exit 0, current set kept,
+#                          exactly BACKUP_KEEP pattern markers, pruned sets gone,
+#                          unverified set and malformed marker untouched (CER-027)
+#  11. partial prune    — the second of two prune removals fails: exit 5, report names the
+#                          first stamp as pruned and the second as failed (INFRA-012)
+#  12. no prune on fail — hash-mismatch run over seeded sets: exit 4, nothing deleted, no
+#                          marker written (INFRA-012)
 #
 # Exits non-zero if any case fails.
 
@@ -355,6 +369,318 @@ elif [ -f "$SSH_MARKER" ]; then
   ok=1; detail="stub-ssh marker file present — ssh was invoked during a dry run"
 fi
 report "dry run (exit 0, no ssh invoked)" "$ok" "$detail"
+
+# =====================================================================================
+# Shared helpers for the staging, backup and retention cases (INFRA-012).
+# =====================================================================================
+BACKUP_KEEP="$(sed -n 's/^BACKUP_KEEP=\([0-9][0-9]*\)$/\1/p' "$DEPLOY_SH" | head -n 1)"
+if [ -z "$BACKUP_KEEP" ]; then
+  echo "deploy-selftest: could not read BACKUP_KEEP from deploy.sh" >&2
+  exit 1
+fi
+STAMP_RE='^[0-9]{8}T[0-9]{6}Z$'
+SET_FILES=(index.html gap-handoff.html site-provenance.json)
+SENTINEL="$WORK_DIR/sentinel"
+SENTINEL_BYTES="sentinel — must never be written through"
+
+stamp_at() { date -u -d "@$1" +%Y%m%dT%H%M%SZ; }
+
+reset_sentinel() { printf '%s\n' "$SENTINEL_BYTES" > "$SENTINEL"; }
+sentinel_intact() { [ "$(cat "$SENTINEL")" = "$SENTINEL_BYTES" ]; }
+
+# A fresh target directory holding stand-in live bundles and a live sidecar.
+fresh_target() {
+  local dir="$1"
+  rm -rf "$dir"
+  mkdir -p "$dir"
+  echo "pre-existing live index bundle" > "$dir/index.html"
+  echo "pre-existing live gap-handoff bundle" > "$dir/gap-handoff.html"
+  echo '{"pre-existing": "live sidecar"}' > "$dir/site-provenance.json"
+}
+
+stamp_from_output() { printf '%s\n' "$1" | sed -n 's/^stamp[[:space:]]*//p' | head -n 1; }
+
+# Seeds one backup set (three .bak-<stamp> files), with a marker when $3 is "verified".
+seed_set() {
+  local dir="$1" s="$2" kind="$3" n
+  for n in "${SET_FILES[@]}"; do
+    echo "seeded backup of $n at $s" > "$dir/$n.bak-$s"
+  done
+  if [ "$kind" = "verified" ]; then
+    : > "$dir/.deploy-verified-$s"
+  fi
+}
+
+# Verified marker names in a directory whose stamp matches the stamp pattern.
+pattern_markers() {
+  local dir="$1" f
+  for f in "$dir"/.deploy-verified-*; do
+    [ -e "$f" ] || continue
+    f="${f##*/.deploy-verified-}"
+    if [[ "$f" =~ $STAMP_RE ]]; then echo "$f"; fi
+  done
+}
+
+PAST_STAMPS=()
+for i in 1 2 3 4 5 6; do PAST_STAMPS+=("20200101T00000${i}Z"); done
+FUTURE_STAMPS=()
+for i in $(seq 1 "$BACKUP_KEEP"); do FUTURE_STAMPS+=("$(printf '20990101T%06dZ' "$i")"); done
+UNVERIFIED_STAMP="20000101T000000Z"
+MALFORMED_MARKER=".deploy-verified-19990101T000000Z-x"
+
+# Clears backups and markers, then seeds six past verified sets, BACKUP_KEEP verified
+# sets dated 2099, one unverified set older than all of them, and one marker whose
+# name fails the stamp pattern.
+seed_retention() {
+  local dir="$1" s
+  rm -f "$dir"/*.bak-* "$dir"/.deploy-verified-*
+  for s in "${PAST_STAMPS[@]}" "${FUTURE_STAMPS[@]}"; do seed_set "$dir" "$s" verified; done
+  seed_set "$dir" "$UNVERIFIED_STAMP" unverified
+  : > "$dir/$MALFORMED_MARKER"
+}
+
+# =====================================================================================
+# Case 8: staging symlinks (CER-023) — a symlink planted at every old-scheme stage name
+# (.<name>.deploy-<S>.tmp) for the run's time window is never written through.
+# =====================================================================================
+SYM_TARGET="$WORK_DIR/symlink-target"
+fresh_target "$SYM_TARGET"
+reset_sentinel
+now="$(date -u +%s)"
+for off in $(seq 0 10); do
+  S="$(stamp_at $((now + off)))"
+  for n in "${SET_FILES[@]}"; do
+    ln -s "$SENTINEL" "$SYM_TARGET/.${n}.deploy-${S}.tmp"
+  done
+done
+
+export FORQSITE_HELP_DEPLOY_DIR="$SYM_TARGET"
+set +e
+out_sym="$(run_deploy 2>&1)"
+status_sym=$?
+set -e
+
+left_stage=""
+for f in "$SYM_TARGET"/.*.deploy-*; do
+  [ -e "$f" ] || [ -L "$f" ] || continue
+  [ -L "$f" ] && continue   # the planted symlinks themselves
+  left_stage="$f"
+done
+
+ok=0
+detail=""
+if [ "$status_sym" -ne 0 ]; then
+  ok=1; detail="expected exit 0, got $status_sym: $out_sym"
+elif ! sentinel_intact; then
+  ok=1; detail="sentinel outside the target was written through a planted stage symlink"
+elif [ "$(sha256sum "$SYM_TARGET/index.html" | cut -d' ' -f1)" != "$committed_index_sha" ]; then
+  ok=1; detail="target index.html does not match committed bytes"
+elif [ "$(sha256sum "$SYM_TARGET/gap-handoff.html" | cut -d' ' -f1)" != "$committed_gap_sha" ]; then
+  ok=1; detail="target gap-handoff.html does not match committed bytes"
+elif [ -n "$left_stage" ]; then
+  ok=1; detail="a stage file was left in the target: ${left_stage##*/}"
+fi
+report "staging symlinks (exit 0, bytes match, sentinel unchanged, no stage left)" "$ok" "$detail"
+
+# Backup-name symlinks: a symlink at index.html.bak-<S> for the run's window must make
+# the deploy refuse (exit 5), never write through it.
+BAKSYM_TARGET="$WORK_DIR/backup-symlink-target"
+fresh_target "$BAKSYM_TARGET"
+reset_sentinel
+now="$(date -u +%s)"
+for off in $(seq 0 10); do
+  ln -s "$SENTINEL" "$BAKSYM_TARGET/index.html.bak-$(stamp_at $((now + off)))"
+done
+
+export FORQSITE_HELP_DEPLOY_DIR="$BAKSYM_TARGET"
+set +e
+out_baksym="$(run_deploy 2>&1)"
+status_baksym=$?
+set -e
+
+ok=0
+detail=""
+if [ "$status_baksym" -ne 5 ]; then
+  ok=1; detail="expected exit 5, got $status_baksym: $out_baksym"
+elif ! sentinel_intact; then
+  ok=1; detail="sentinel outside the target was written through a planted backup symlink"
+elif ! printf '%s' "$out_baksym" | grep -q "index.html"; then
+  ok=1; detail="refusal did not name index.html"
+elif printf '%s' "$out_baksym" | grep -F "$BAKSYM_TARGET" >/dev/null; then
+  ok=1; detail="refusal named the target directory"
+fi
+report "backup symlinks (exit 5, sentinel unchanged, names the file not the directory)" "$ok" "$detail"
+
+# =====================================================================================
+# Case 9: first-write mode — a destination that did not exist is created 0644 (never
+# the mktemp stage's 0600), even under a restrictive umask; an existing destination
+# keeps its inode and its operator-set mode.
+# =====================================================================================
+MODE_TARGET="$WORK_DIR/first-write-target"
+rm -rf "$MODE_TARGET"
+mkdir -p "$MODE_TARGET"
+echo "pre-existing live index bundle" > "$MODE_TARGET/index.html"
+chmod 0640 "$MODE_TARGET/index.html"
+before_mode_inode="$(stat -c '%i' "$MODE_TARGET/index.html")"
+
+export FORQSITE_HELP_DEPLOY_DIR="$MODE_TARGET"
+set +e
+out_mode="$( umask 077; run_deploy 2>&1 )"
+status_mode=$?
+set -e
+
+mode_of() { stat -c '%a' "$1" 2>/dev/null || echo missing; }
+ok=0
+detail=""
+if [ "$status_mode" -ne 0 ]; then
+  ok=1; detail="expected exit 0, got $status_mode: $out_mode"
+elif [ "$(mode_of "$MODE_TARGET/gap-handoff.html")" != "644" ]; then
+  ok=1; detail="newly created gap-handoff.html has mode $(mode_of "$MODE_TARGET/gap-handoff.html"), expected 644"
+elif [ "$(mode_of "$MODE_TARGET/site-provenance.json")" != "644" ]; then
+  ok=1; detail="newly created site-provenance.json has mode $(mode_of "$MODE_TARGET/site-provenance.json"), expected 644"
+elif [ "$(mode_of "$MODE_TARGET/index.html")" != "640" ]; then
+  ok=1; detail="existing index.html mode changed to $(mode_of "$MODE_TARGET/index.html"), expected 640"
+elif [ "$(stat -c '%i' "$MODE_TARGET/index.html")" != "$before_mode_inode" ]; then
+  ok=1; detail="existing index.html was replaced (inode changed)"
+elif [ "$(sha256sum "$MODE_TARGET/index.html" | cut -d' ' -f1)" != "$committed_index_sha" ]; then
+  ok=1; detail="target index.html does not match committed bytes"
+fi
+report "first-write mode (new files 0644 under umask 077; existing file keeps inode and mode)" "$ok" "$detail"
+
+# =====================================================================================
+# Case 10: retention (CER-027) — future-dated verified sets never displace the current
+# set; unverified sets and malformed marker names are never touched.
+# =====================================================================================
+RET_TARGET="$WORK_DIR/retention-target"
+fresh_target "$RET_TARGET"
+seed_retention "$RET_TARGET"
+
+export FORQSITE_HELP_DEPLOY_DIR="$RET_TARGET"
+set +e
+out_ret="$(run_deploy 2>&1)"
+status_ret=$?
+set -e
+ret_stamp="$(stamp_from_output "$out_ret")"
+
+# Expected pruned: every past stamp, plus the oldest future stamps beyond KEEP - 1.
+expected_pruned=("${PAST_STAMPS[@]}" "${FUTURE_STAMPS[@]:0:$(( ${#FUTURE_STAMPS[@]} - (BACKUP_KEEP - 1) ))}")
+
+ok=0
+detail=""
+if [ "$status_ret" -ne 0 ]; then
+  ok=1; detail="expected exit 0, got $status_ret: $out_ret"
+elif ! [[ "$ret_stamp" =~ $STAMP_RE ]]; then
+  ok=1; detail="could not read the run's stamp from the success block"
+elif [ ! -e "$RET_TARGET/.deploy-verified-$ret_stamp" ]; then
+  ok=1; detail="current set's marker missing"
+else
+  for n in "${SET_FILES[@]}"; do
+    if [ ! -f "$RET_TARGET/$n.bak-$ret_stamp" ]; then ok=1; detail="current set's $n backup missing"; fi
+  done
+fi
+if [ "$ok" -eq 0 ]; then
+  marker_count="$(pattern_markers "$RET_TARGET" | wc -l)"
+  if [ "$marker_count" -ne "$BACKUP_KEEP" ]; then
+    ok=1; detail="expected $BACKUP_KEEP pattern markers, found $marker_count"
+  fi
+fi
+if [ "$ok" -eq 0 ]; then
+  for s in "${expected_pruned[@]}"; do
+    for f in "${SET_FILES[@]/%/.bak-$s}" ".deploy-verified-$s"; do
+      if [ -e "$RET_TARGET/$f" ]; then ok=1; detail="pruned stamp's file still present: $f"; fi
+    done
+  done
+fi
+if [ "$ok" -eq 0 ]; then
+  for f in "${SET_FILES[@]/%/.bak-$UNVERIFIED_STAMP}" "$MALFORMED_MARKER"; do
+    if [ ! -e "$RET_TARGET/$f" ]; then ok=1; detail="unverified or malformed entry was removed: $f"; fi
+  done
+  if [ "$(cat "$RET_TARGET/index.html.bak-$UNVERIFIED_STAMP")" != "seeded backup of index.html at $UNVERIFIED_STAMP" ]; then
+    ok=1; detail="unverified set's content changed"
+  fi
+fi
+if [ "$ok" -eq 0 ] && ! printf '%s\n' "$out_ret" | grep -q "^pruned .*${PAST_STAMPS[0]}"; then
+  ok=1; detail="success block has no pruned line naming the pruned stamps"
+fi
+report "retention (current set kept, $BACKUP_KEEP verified markers, pruned sets gone, unverified + malformed untouched)" "$ok" "$detail"
+
+# =====================================================================================
+# Case 11: partial prune failure — the second of two prune removals fails; the report
+# names the first stamp as pruned and the second as the one that failed, and never
+# claims that no backups were pruned.
+# =====================================================================================
+PART_TARGET="$WORK_DIR/partial-prune-target"
+fresh_target "$PART_TARGET"
+# BACKUP_KEEP - 1 kept plus exactly two to prune.
+part_stamps=()
+for i in $(seq 1 $((BACKUP_KEEP + 1))); do part_stamps+=("$(printf '20200101T%06dZ' "$i")"); done
+for s in "${part_stamps[@]}"; do seed_set "$PART_TARGET" "$s" verified; done
+first_pruned="${part_stamps[0]}"
+failing="${part_stamps[1]}"
+# A non-empty directory where a backup file is expected: rm -f cannot remove it.
+rm -f "$PART_TARGET/index.html.bak-$failing"
+mkdir -p "$PART_TARGET/index.html.bak-$failing/blocker"
+
+export FORQSITE_HELP_DEPLOY_DIR="$PART_TARGET"
+set +e
+out_part="$(run_deploy 2>&1)"
+status_part=$?
+set -e
+
+ok=0
+detail=""
+if [ "$status_part" -ne 5 ]; then
+  ok=1; detail="expected exit 5, got $status_part: $out_part"
+elif ! printf '%s\n' "$out_part" | grep -i "pruned" | grep -q "$first_pruned"; then
+  ok=1; detail="report does not name $first_pruned as pruned: $out_part"
+elif ! printf '%s\n' "$out_part" | grep -i "fail" | grep -q "$failing"; then
+  ok=1; detail="report does not name $failing as the failed stamp: $out_part"
+elif printf '%s\n' "$out_part" | grep -qi "no backups were pruned\|no backups pruned"; then
+  ok=1; detail="report claims no backups were pruned after one removal succeeded: $out_part"
+elif [ -e "$PART_TARGET/.deploy-verified-$first_pruned" ] || [ -e "$PART_TARGET/gap-handoff.html.bak-$first_pruned" ]; then
+  ok=1; detail="first stamp's files were not actually removed"
+elif ! printf '%s\n' "$out_part" | grep -qi "verified"; then
+  ok=1; detail="report does not say the files verified"
+fi
+report "partial prune failure (exit 5, names the pruned stamp and the failed one)" "$ok" "$detail"
+rm -rf "$PART_TARGET"
+
+# =====================================================================================
+# Case 12: no prune on failure — a hash-mismatch run deletes nothing and writes no
+# marker.
+# =====================================================================================
+fresh_target "$FIXTURE_TARGET"
+seed_retention "$FIXTURE_TARGET"
+seeded_names=()
+for s in "${PAST_STAMPS[@]}" "${FUTURE_STAMPS[@]}"; do
+  seeded_names+=("${SET_FILES[@]/%/.bak-$s}" ".deploy-verified-$s")
+done
+seeded_names+=("${SET_FILES[@]/%/.bak-$UNVERIFIED_STAMP}" "$MALFORMED_MARKER")
+markers_before="$(cd "$FIXTURE_TARGET" && ls -A | grep '^\.deploy-verified-' | sort)"
+
+export FORQSITE_HELP_DEPLOY_DIR="$FIXTURE_TARGET"
+: > "$CORRUPT_FLAG"
+set +e
+out_noprune="$(run_deploy 2>&1)"
+status_noprune=$?
+set -e
+rm -f "$CORRUPT_FLAG"
+markers_after="$(cd "$FIXTURE_TARGET" && ls -A | grep '^\.deploy-verified-' | sort)"
+
+ok=0
+detail=""
+if [ "$status_noprune" -ne 4 ]; then
+  ok=1; detail="expected exit 4, got $status_noprune: $out_noprune"
+elif [ "$markers_before" != "$markers_after" ]; then
+  ok=1; detail="marker set changed on a failed run"
+else
+  for f in "${seeded_names[@]}"; do
+    if [ ! -e "$FIXTURE_TARGET/$f" ]; then ok=1; detail="seeded file removed on a failed run: $f"; fi
+  done
+fi
+report "no prune on failure (exit 4, every seeded file present, no marker written)" "$ok" "$detail"
+
+export FORQSITE_HELP_DEPLOY_DIR="$FIXTURE_TARGET"
 
 # =====================================================================================
 echo ""
