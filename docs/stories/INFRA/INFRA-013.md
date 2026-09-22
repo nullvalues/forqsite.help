@@ -68,6 +68,12 @@ After this story:
   first two gain file-read cases for these points.
 - Every assignment line in `scripts/deploy.env.example`, once uncommented and filled in,
   parses cleanly.
+- Added after attempt 1's review (2026-09-22): the selftests pass *deterministically*. INFRA-012
+  refuses a deploy whose one-second backup stamp already exists in the target, so no two
+  `deploy.sh` runs in `deploy-selftest.sh` may hit the same target directory unless the target
+  is reset between them (`fresh_target`, or clearing its `.bak-*` and `.deploy-verified-*`),
+  or the test is expressly asserting that refusal. Every consecutive pair of deploy calls in the
+  file, old cases included, is checked for this, not only the new ones.
 
 Forbidden proxies:
 - Removing the literal word `source` while the parser still hands file text to `eval`,
