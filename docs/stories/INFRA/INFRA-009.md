@@ -2,7 +2,7 @@
 id: INFRA-009
 rail: INFRA
 title: Keep the configured destination out of a failing drift check's output
-status: draft
+status: complete
 phase: "11"
 story_class: code
 auth_gated: false

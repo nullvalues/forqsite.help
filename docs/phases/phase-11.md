@@ -69,7 +69,7 @@ deliberate, recorded state, not an oversight.
 | INFRA-007 | A drift check that compares served bytes to committed bytes | complete |
 | INFRA-008 | Site provenance a reader and a check can both see | complete |
 | CONTENT-028 | Record the procedure, the incident, and the lesson | complete |
-| INFRA-009 | Keep the configured destination out of a failing drift check's output | draft |
+| INFRA-009 | Keep the configured destination out of a failing drift check's output | complete |
 | CONTENT-029 | Record the site-URL ruling in the rule it extends, and scrub what it now covers | draft |
 
 ### INFRA-006 — The deploy procedure
