@@ -71,6 +71,11 @@ deliberate, recorded state, not an oversight.
 | CONTENT-028 | Record the procedure, the incident, and the lesson | complete |
 | INFRA-009 | Keep the configured destination out of a failing drift check's output | complete |
 | CONTENT-029 | Record the site-URL ruling in the rule it extends, and scrub what it now covers | complete |
+| INFRA-010 | Make the drift check's output and fetches safe against a hostile origin | draft |
+| INFRA-011 | Make the deploy's remote command safe to construct | draft |
+| INFRA-012 | Stage deploys unpredictably and bound the backups they leave | draft |
+| INFRA-013 | Read the deploy config as data, never execute it | draft |
+| INFRA-014 | Keep the configured destination out of the deploy's transport errors | draft |
 
 ### INFRA-006 — The deploy procedure
 
@@ -186,6 +191,62 @@ arrangement. Phase 10's standard applies: the reason must survive generalisation
 
 **Not done if** the published bundles are touched. They are out of scope for this phase entirely.
 
+### Round 2 — the rest of the audit, pulled in by the operator
+
+The `cer-do-now` checkpoint guard refused CP-11 on CER-025, CER-026 and CER-027: they were filed
+in Do Now while this doc called them carried. The operator ruled on 2026-09-22 to build all
+three, and to pull forward the five other findings from the same audit that touch the same two
+scripts — CER-019, CER-021, CER-023, CER-024 and CER-028. Eight findings, five stories, grouped
+by file and by concern.
+
+### INFRA-010 — The drift check against a hostile origin (CER-026, CER-021)
+
+**Done when** every sidecar field `scripts/drift-check.sh` prints is reduced to its expected
+character class at extraction, so no control or escape sequence from the origin reaches the
+operator's terminal or the report block they paste.
+
+**Done when** both fetches bound their size and restrict their scheme; `file://` is refused.
+
+**Not done if** the check can be fooled by the sanitising. The byte comparison runs on the raw
+fetched file, never the display copy — a field that differs must still read as drift.
+
+### INFRA-011 — The deploy's remote command (CER-025, CER-019)
+
+**Done when** the configured alias is constrained to a hostname-shaped class that cannot begin
+with `-`, and refused before any `ssh` call.
+
+**Done when** no value reaches the far shell in bash-only quoting. Every quoted value must be
+valid under POSIX `sh`, because the remote login shell is not ours to choose.
+
+**Not done if** a configuration that deploys today stops deploying.
+
+### INFRA-012 — Staging and backups (CER-023, CER-027)
+
+**Done when** each file is staged at an unpredictable name created exclusively on the far side,
+not a predictable name opened with `cat >`.
+
+**Done when** backups are bounded to a stated retention count.
+
+**Not done if** pruning can remove the rollback copy of a deploy that failed verification. Prune
+only after a verified deploy, and never the backup it just made.
+
+### INFRA-013 — The config is data (CER-024)
+
+**Done when** neither script `source`s the config. Both parse `KEY=value` lines for the keys they
+know, and refuse any other line by line number, without printing its value.
+
+**Not done if** any part of a value is ever evaluated. `$(...)` and backticks in the file are
+literal text.
+
+### INFRA-014 — The deploy's transport errors (CER-028)
+
+**Done when** a failing deploy prints what went wrong (the host would not resolve, auth was refused,
+the remote directory is missing) without the configured alias or directory. The failure output is
+asserted the same way INFRA-009 asserted the drift check's.
+
+**Not done if** interactive authentication breaks. Capturing `ssh`'s stderr must not swallow a
+passphrase or host-key prompt.
+
 ### Gate state — read this before tagging CP-11
 
 `checkpoint-security` is recorded PASS for this phase, and that verdict is **stale**. It was
@@ -200,12 +261,15 @@ remediated tree and re-record both verdicts, then `checkpoint-intent`, the dark-
 ships executable code that authenticates to a production host, which the first CP-11 audit
 treated as a materially different risk surface from Phase 10's documentation.
 
-Remaining after CONTENT-029: the two gate re-runs above, `checkpoint-intent`, the dark-feature
+The same holds, with more force, after round 2: INFRA-010 through INFRA-014 change both scripts
+again, so the re-run must audit the tree as it stands after INFRA-014.
+
+Remaining after INFRA-014: the two gate re-runs above, `checkpoint-intent`, the dark-feature
 scan, `checkpoint-report`, then `record-checkpoint-step checkpoint-tag` → commit the ledger paths
 → `git tag cp-11`.
 
-**Carried, not built:** CER-019, CER-021, CER-023 through CER-028 are filed and deliberately not
-fixed here. One observation has no row yet and should get one: CER-014, CER-020 and CER-028 share
+**Superseded:** this section used to say that CER-019, CER-021 and CER-023 through CER-028 were
+carried and not built. Round 2 builds all of them. One observation has no row yet and should get one: CER-014, CER-020 and CER-028 share
 a shape — a guarantee tested on the success path and assumed on the failure path. The stale site
 itself was the same thing at a larger scale. That may be a sharper form of the constraint
 CONTENT-028 added to `docs/ideology.md`, and belongs to a later phase's framing rather than this
@@ -216,6 +280,11 @@ one's.
 INFRA-006 and INFRA-007 are independent and may run in either order. INFRA-008 follows INFRA-006,
 because the sidecar is written by the deploy path. CONTENT-028 runs last: it documents what the
 other three built, and cannot describe a procedure that does not exist yet.
+
+The round-2 stories run in table order after CONTENT-029: INFRA-010, then INFRA-011 through
+INFRA-014. Each merges before the next branches, so two stories touching `scripts/deploy.sh` never
+build over each other. INFRA-013 changes how both scripts load their config, so whichever story
+follows it builds against the new loader.
 
 ## What is NOT in scope
 
