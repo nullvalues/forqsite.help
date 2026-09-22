@@ -27,18 +27,33 @@
 #     bundle, hashing each distinct blob, to name which committed version (if any)
 #     the served bytes actually match — because "the bytes differ" is a weaker report
 #     than "the bytes differ, and the site is serving commit <X>".
+#   - Also fetches <base-url>/site-provenance.json (INFRA-008) and reports it as a
+#     labelled *claim* alongside the per-bundle result — never as part of the match
+#     decision. The sidecar can only ever add a failure: its claimed per-bundle
+#     sha256 values are compared against the bytes this run actually fetched, and a
+#     disagreement is reported with its own exit code, reachable only when no bundle
+#     drifted (drift's exit 3 always outranks it). It can never supply a match,
+#     suppress one, or turn a DRIFT into an ok — trusting a version string out of the
+#     sidecar as the basis of the decision is exactly the proxy this script exists to
+#     refuse; a stale or hand-written sidecar would lie, and the site would look
+#     current because it said so.
 #   - Prints one report block. Exits 0 only when every bundle's served bytes match the
-#     ref's bytes.
+#     ref's bytes and the sidecar did not contradict them.
 #
 # Usage:
 #   drift-check.sh [--ref <git-ref>]
 #
 # Exit codes:
-#   0   no drift — every bundle's served bytes match the ref
+#   0   no drift — every bundle's served bytes match the ref (the sidecar, if present,
+#       agreed, or was absent/unreadable — never part of this decision either way)
 #   2   configuration missing (FORQSITE_HELP_SITE_URL)
 #   3   drift detected — at least one bundle's served bytes do not match the ref
+#       (outranks 6: always the exit when both are true)
 #   4   fetch failure (non-2xx, a redirect, a connection failure, or a timeout)
 #   5   a bundle is not tracked at the ref
+#   6   provenance sidecar contradiction — the sidecar's claimed sha256 for a bundle
+#       disagrees with that bundle's served bytes, and no bundle drifted (exit 3 takes
+#       precedence whenever both conditions hold)
 #   64  usage error (unrecognised argument, or --ref given with no value)
 #
 # Notes:
@@ -64,6 +79,11 @@
 #     a 3xx response is never followed. It is still explicitly detected as a fetch
 #     failure below, because "the bytes this URL returns" is the claim being checked,
 #     and a redirect means some other URL answered it.
+#   - The provenance sidecar can only ever add a failure because the bundle
+#     match/drift decision is, and remains, served bytes vs `git show <ref>:<bundle>`
+#     alone — the sidecar's repo_commit, its deployed_at, its claimed bundle sha256
+#     values, and its mere presence are never the basis of that decision, only ever
+#     reported alongside it.
 
 set -euo pipefail
 
@@ -152,6 +172,34 @@ fetch_bundle() {
   esac
 }
 
+# --- Fetch the provenance sidecar (INFRA-008) — additional context only, never part
+# of the match decision. A fetch failure, a non-2xx/redirect, or a body that does not
+# parse as the expected fixed shape is reported as a plain line, never an error, and
+# changes no exit code. Returns non-zero (caller-checked, not `set -e`-propagated) on
+# any such failure; success writes the raw body to "$1/site-provenance.json".
+fetch_provenance() {
+  local scratch="$1"
+  local url="${BASE_URL}/site-provenance.json"
+  local out status
+  set +e
+  out="$(curl --silent --show-error \
+       --header 'Accept-Encoding: identity' \
+       --header 'Cache-Control: no-cache' \
+       --connect-timeout 10 --max-time 60 \
+       --output "${scratch}/site-provenance.json" \
+       --write-out '%{http_code}' \
+       "$url" 2>"${scratch}/site-provenance.curlerr")"
+  status=$?
+  set -e
+  if [ "$status" -ne 0 ]; then
+    return 1
+  fi
+  case "$out" in
+    2??) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 # --- Name which commit the served bytes match, when they do not match the ref -------
 # Walks commits reachable from $REF that touched $bundle, newest first, hashing each
 # distinct blob until one matches $served_sha. Prints its report line either way; a
@@ -227,9 +275,45 @@ done
 
 printf '%-18s  not served — bind-mounted only; no request returns its bytes, so this check cannot cover it\n' "nginx.conf"
 
+# --- Provenance sidecar report — a claim, never a match. See header notes. ----------
+PROVENANCE_CONTRADICTION=0
+if fetch_provenance "$SCRATCH"; then
+  provenance_file="${SCRATCH}/site-provenance.json"
+  claimed_commit="$(sed -n 's/.*"repo_commit": "\([^"]*\)".*/\1/p' "$provenance_file")"
+  claimed_deployed_at="$(sed -n 's/.*"deployed_at": "\([^"]*\)".*/\1/p' "$provenance_file")"
+  claimed_index_sha="$(sed -n 's/.*"index\.html": "\([^"]*\)".*/\1/p' "$provenance_file")"
+  claimed_gap_sha="$(sed -n 's/.*"gap-handoff\.html": "\([^"]*\)".*/\1/p' "$provenance_file")"
+
+  if [ -z "$claimed_commit" ] || [ -z "$claimed_deployed_at" ] || \
+     [ -z "$claimed_index_sha" ] || [ -z "$claimed_gap_sha" ]; then
+    echo "provenance         absent or unreadable — the bundle result above does not depend on it"
+  else
+    declare -A CLAIMED_SHA
+    CLAIMED_SHA["index.html"]="$claimed_index_sha"
+    CLAIMED_SHA["gap-handoff.html"]="$claimed_gap_sha"
+    printf 'provenance         claims %s deployed %s  (claim, not the basis of the result above)\n' \
+      "${claimed_commit:0:7}" "$claimed_deployed_at"
+    for bundle in "${BUNDLES[@]}"; do
+      if [ "${CLAIMED_SHA[$bundle]}" != "${SERVED_SHA[$bundle]}" ]; then
+        PROVENANCE_CONTRADICTION=1
+        printf '  provenance claim for %-18s disagrees with served bytes\n' "$bundle"
+        printf '    claimed           %s\n' "${CLAIMED_SHA[$bundle]}"
+        printf '    served            %s\n' "${SERVED_SHA[$bundle]}"
+      fi
+    done
+  fi
+else
+  echo "provenance         absent or unreadable — the bundle result above does not depend on it"
+fi
+
 if [ "$DRIFT_COUNT" -ne 0 ]; then
   echo "result             DRIFT — ${DRIFT_COUNT} of ${#BUNDLES[@]} served bundles does not match the ref"
   exit 3
+fi
+
+if [ "$PROVENANCE_CONTRADICTION" -ne 0 ]; then
+  echo "result             provenance contradiction — the sidecar's claimed bundle hash disagrees with served bytes, though no bundle drifted"
+  exit 6
 fi
 
 echo "result             ok — served bytes match the ref for all ${#BUNDLES[@]} bundles"
