@@ -2,7 +2,7 @@
 id: INFRA-011
 rail: INFRA
 title: Make the deploy's remote command safe to construct
-status: draft
+status: complete
 phase: "11"
 auth_gated: false
 schema_introduces: false
