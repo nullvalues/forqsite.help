@@ -2,7 +2,7 @@
 id: INFRA-010
 rail: INFRA
 title: Make the drift check's output and fetches safe against a hostile origin
-status: draft
+status: complete
 phase: "11"
 auth_gated: false
 schema_introduces: false
