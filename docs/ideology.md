@@ -168,6 +168,13 @@ a finding can cite its subject by class ("the Docker host that runs the edge pro
 verification record can do the same ("from the deployment host"), so naming the instance is
 not required — only permitted. Prefer the class form when both are possible.
 
+**Ruling — the public site's address:** The public site's address is a deployment-specific
+identifier this rule covers, on the same footing as a host name or an absolute path. This
+repository and its product ship as public sibling repos, and a downstream adopter rebrands
+both — so the address names our instance, not the product, and a live description of the
+architecture states it by class (e.g. "the public site," "the site's public address") rather
+than in the identifier's own form.
+
 ### Cite the source that makes a claim checkable
 
 **Rule:** A published claim about forqsite's behaviour carries its evidence — the

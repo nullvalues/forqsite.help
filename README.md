@@ -3,7 +3,8 @@
 Administrator documentation for [forqsite](https://github.com/nullvalues/forqsite) —
 the self-hosted, multi-tenant website builder.
 
-**Live site:** https://forqsite.help
+**Live site:** the address is per-deployment and is published outside this tree, in the
+repository's homepage/website metadata.
 
 ## Why this repo exists
 
@@ -27,9 +28,10 @@ They work offline, from `file://`, or behind any static file server.
 Anything that serves static files works as-is:
 
 ```
-# Caddy
-forqsite.help {
-    root * /srv/forqsite.help
+# Caddy — replace example.com with this deployment's own address, and
+# /srv/site with wherever this repo's files are checked out on that host
+example.com {
+    root * /srv/site
     file_server
 }
 ```

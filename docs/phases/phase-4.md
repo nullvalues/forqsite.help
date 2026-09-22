@@ -45,8 +45,8 @@ build pipeline, framework, or hand-maintained server code.
   caddy's `services/README.md` — "sibling services never publish host
   ports").
 - `nginx.conf` (or equivalent) bind-mounted read-only, listening on port
-  `6000` internally (matching the port already reserved for
-  forqsite.help in caddy's `docs/port-registry.md`), serving `index.html`
+  `6000` internally (matching the port already reserved for this site
+  in caddy's `docs/port-registry.md`), serving `index.html`
   at `/` and `gap-handoff.html` at `/gap-handoff.html` — both bind-mounted
   read-only from the repo's existing files, not copied into an image.
 - No `Dockerfile` — bind-mount only, preserving the "no build step"
@@ -56,8 +56,8 @@ build pipeline, framework, or hand-maintained server code.
   required for Docker DNS resolution on the shared `edge` network) at a per-site
   directory under that host's service root, mirroring the proxy's own deploy convention.
 - Post-deploy verification: `docker compose up -d` brings the container
-  up healthy; from the deployment host, `curl --resolve forqsite.help:443:127.0.0.1
-  https://forqsite.help/` (proxied through the already-running caddy
+  up healthy; from the deployment host, `curl --resolve` against the site's public
+  address, pinned to `127.0.0.1` (proxied through the already-running caddy
   container) returns `200`, not `502`.
 - `docs/architecture.md` updated to describe the new `docker-compose.yml`
   / `nginx.conf` and drop any remaining "no server" framing that no
@@ -96,7 +96,7 @@ from the deployment host.
 Verification:
 - `docker ps` from the deployment host: `forqsite-help` container `Up`.
 - End-to-end through the already-running caddy container:
-  `curl --resolve forqsite.help:443:127.0.0.1 https://forqsite.help/` ->
+  `curl --resolve` against the site's public address, pinned to `127.0.0.1` ->
   `200`, byte-identical to the source `index.html` (427642 bytes both
   sides). `/gap-handoff.html` -> `200`.
 - `docs/architecture.md` and `CLAUDE.md` updated to drop the stale

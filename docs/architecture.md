@@ -72,7 +72,7 @@ INFRA-002 (phase 4) containerized this project: `docker-compose.yml` runs
 `nginx:alpine` as container `forqsite-help`, joined to the external `edge` Docker
 network, with `nginx.conf`, `index.html`, and `gap-handoff.html` bind-mounted
 read-only — no Dockerfile, no image build. No host ports are published; the sibling
-`caddy` repo's `sites/forqsite-help.caddy` reverse-proxies `forqsite.help` ->
+`caddy` repo's `sites/forqsite-help.caddy` reverse-proxies the public site's address to
 `forqsite-help:6000` over that shared network. Deployed alongside caddy on the Docker
 host that runs the edge proxy at a per-site directory under that host's service root,
 mirroring the proxy's own deploy convention — required since Docker's embedded DNS

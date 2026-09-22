@@ -61,7 +61,7 @@ before `docker compose up -d`.
 
 - `docker compose config` passes locally and from the deployment host.
 - From the deployment host: `docker ps` shows `forqsite-help` container `Up`.
-- From the deployment host: `curl --resolve forqsite.help:443:127.0.0.1
-  https://forqsite.help/` (through the existing caddy container) returns
+- From the deployment host: `curl --resolve` against the site's public address,
+  pinned to `127.0.0.1` (through the existing caddy container) returns
   `200` with the real page content, not `502`.
 - `curl .../gap-handoff.html` via the same pattern also returns `200`.
