@@ -74,7 +74,7 @@ deliberate, recorded state, not an oversight.
 | INFRA-010 | Make the drift check's output and fetches safe against a hostile origin | complete |
 | INFRA-011 | Make the deploy's remote command safe to construct | complete |
 | INFRA-012 | Stage deploys unpredictably and bound the backups they leave | complete |
-| INFRA-013 | Read the deploy config as data, never execute it | draft |
+| INFRA-013 | Read the deploy config as data, never execute it | complete |
 | INFRA-014 | Keep the configured destination out of the deploy's transport errors | draft |
 
 ### INFRA-006 — The deploy procedure

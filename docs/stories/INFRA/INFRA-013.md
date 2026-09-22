@@ -2,7 +2,7 @@
 id: INFRA-013
 rail: INFRA
 title: Read the deploy config as data, never execute it
-status: draft
+status: complete
 phase: "11"
 auth_gated: false
 schema_introduces: false
