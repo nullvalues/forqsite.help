@@ -2,7 +2,7 @@
 id: INFRA-012
 rail: INFRA
 title: Stage deploys unpredictably and bound the backups they leave
-status: draft
+status: complete
 phase: "11"
 auth_gated: false
 schema_introduces: false
