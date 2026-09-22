@@ -13,3 +13,7 @@
 
 # Local settings backups
 .claude/*.bak-*
+
+# Deploy target configuration (ssh alias / remote directory) — operator-local, never
+# tracked (INFRA-006).
+scripts/deploy.env
