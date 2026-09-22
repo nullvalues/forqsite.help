@@ -17,10 +17,24 @@
 #                                 HEAD bytes, but the server returns different bytes;
 #                                 exit 3 proves the check asserts on the request, not
 #                                 the file
-#   5. fetch failure            — exit 4, message names the bundle and the reason, not 3
+#   5. fetch failure (non-2xx)  — exit 4, message names the bundle and the reason, not
+#                                 3; hygiene: configured base URL/host/port absent from
+#                                 captured output, and the 404/HTTP reason still named
+#                                 (INFRA-009)
 #   6. missing config           — exit 2, message names FORQSITE_HELP_SITE_URL, no
 #                                 request attempted
 #   7. usage error               — exit 64, not 2 (CER-015)
+#   8. connection failure (INFRA-009) — exit 4 against an ephemeral 127.0.0.1 port with
+#                                 nothing listening; hygiene: configured base URL/host/
+#                                 port absent, curl's own exit code/label still named.
+#                                 Timeout is deliberately not a separate case — same
+#                                 status -ne 0 branch, differs only in the exit-code
+#                                 label, and --max-time 60 makes it a minute-long test
+#                                 for no additional coverage.
+#   9. redirect (INFRA-009)      — exit 4 against a 302 whose Location is a target that
+#                                 is not the fixture URL; hygiene: configured base URL/
+#                                 host/port AND the redirect target absent, the 3xx
+#                                 status still named
 #
 # Exits non-zero if any case fails.
 
@@ -92,7 +106,7 @@ cp "$FIXTURE_REPO/index.html" "$SERVE_DIR/index.html"
 cp "$FIXTURE_REPO/gap-handoff.html" "$SERVE_DIR/gap-handoff.html"
 
 reset_control() {
-  rm -f "$CONTROL_DIR"/override-* "$CONTROL_DIR"/404-* 2>/dev/null || true
+  rm -f "$CONTROL_DIR"/override-* "$CONTROL_DIR"/404-* "$CONTROL_DIR"/redirect-* 2>/dev/null || true
   : > "$REQUEST_LOG"
 }
 reset_control
@@ -102,8 +116,12 @@ reset_control
 # bytes are served for a request to /<name> instead of the file in $SERVE_DIR — this is
 # what makes the stale-inode/forbidden-proxy case reproducible locally: the file on disk
 # in the served directory can hold one set of bytes while the server answers a request
-# with another. If $CONTROL_DIR/404-<name> exists, a request for /<name> gets a 404.
-# Every request is logged to $REQUEST_LOG.
+# with another. If $CONTROL_DIR/404-<name> exists, a request for /<name> gets a 404. If
+# $CONTROL_DIR/redirect-<name> exists, a request for /<name> gets a 302 whose Location
+# is that file's contents (INFRA-009) — used to prove the redirect target is withheld
+# from drift-check.sh's output rather than merely proving the base URL happens to be
+# absent, its target is deliberately not the fixture URL. Every request is logged to
+# $REQUEST_LOG.
 cat > "$SERVER_SCRIPT" <<'PYEOF'
 import http.server
 import os
@@ -121,6 +139,14 @@ class Handler(http.server.BaseHTTPRequestHandler):
         notfound = os.path.join(CONTROL_DIR, "404-" + name)
         if os.path.exists(notfound):
             self.send_response(404)
+            self.end_headers()
+            return
+        redirect = os.path.join(CONTROL_DIR, "redirect-" + name)
+        if os.path.exists(redirect):
+            with open(redirect) as f:
+                location = f.read().strip()
+            self.send_response(302)
+            self.send_header("Location", location)
             self.end_headers()
             return
         override = os.path.join(CONTROL_DIR, "override-" + name)
@@ -280,8 +306,19 @@ if [ "$status_case5" -ne 4 ]; then
   ok=1; detail="expected exit 4, got $status_case5: $out_case5"
 elif ! printf '%s' "$out_case5" | grep -q "index.html"; then
   ok=1; detail="message did not name index.html"
+elif printf '%s' "$out_case5" | grep -qF "$FIXTURE_URL"; then
+  ok=1; detail="output leaked the configured base URL (INFRA-009)"
+elif printf '%s' "$out_case5" | grep -qF "127.0.0.1"; then
+  ok=1; detail="output leaked the configured host (INFRA-009)"
+elif printf '%s' "$out_case5" | grep -qF ":${PORT}"; then
+  # Bare-digit grep for the port is ambiguous here (the block legitimately prints
+  # other digits, e.g. an HTTP status code), so this is narrowed to the port with
+  # its ":" prefix per the story's guidance.
+  ok=1; detail="output leaked the configured port (INFRA-009)"
+elif ! printf '%s' "$out_case5" | grep -qE "404|HTTP"; then
+  ok=1; detail="output did not name the distinguishing reason (404/HTTP) — a pure-suppression fix would fail this"
 fi
-report "fetch failure (exit 4, names bundle + reason, not 3)" "$ok" "$detail"
+report "fetch failure / non-2xx (exit 4, names bundle + reason, hygiene: no base URL/host/port — INFRA-009)" "$ok" "$detail"
 reset_control
 
 # =====================================================================================
@@ -329,12 +366,78 @@ fi
 report "usage error (exit 64, distinct from 2 — CER-015)" "$ok" "$detail"
 
 # =====================================================================================
+# Case 8: connection failure (INFRA-009)
+# =====================================================================================
+# Timeout is deliberately not exercised as a separate case: it enters the same
+# `status -ne 0` branch as this connection failure and differs only in the curl
+# exit-code label, while `--max-time 60` would make it a minute-long test for no
+# additional coverage.
+reset_control
+DEAD_PORT=$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1]); s.close()')
+DEAD_URL="http://127.0.0.1:${DEAD_PORT}"
+export FORQSITE_HELP_SITE_URL="$DEAD_URL"
+
+set +e
+out_case8="$(run_drift_check 2>&1)"
+status_case8=$?
+set -e
+
+ok=0
+detail=""
+if [ "$status_case8" -ne 4 ]; then
+  ok=1; detail="expected exit 4, got $status_case8: $out_case8"
+elif printf '%s' "$out_case8" | grep -qF "$DEAD_URL"; then
+  ok=1; detail="output leaked the configured base URL (INFRA-009)"
+elif printf '%s' "$out_case8" | grep -qF "127.0.0.1"; then
+  ok=1; detail="output leaked the configured host (INFRA-009)"
+elif printf '%s' "$out_case8" | grep -qF ":${DEAD_PORT}"; then
+  ok=1; detail="output leaked the configured port (INFRA-009)"
+elif ! printf '%s' "$out_case8" | grep -qE "curl exit|could not resolve|failed to connect|timed out"; then
+  ok=1; detail="output did not name curl's own exit code/label — a pure-suppression fix would fail this"
+fi
+report "connection failure (exit 4, hygiene: no base URL/host/port, curl exit code/label named — INFRA-009)" "$ok" "$detail"
+
+export FORQSITE_HELP_SITE_URL="$FIXTURE_URL"
+
+# =====================================================================================
+# Case 9: redirect (INFRA-009)
+# =====================================================================================
+reset_control
+REDIRECT_TARGET="http://198.51.100.1/elsewhere"
+printf '%s' "$REDIRECT_TARGET" > "$CONTROL_DIR/redirect-index.html"
+
+set +e
+out_case9="$(run_drift_check 2>&1)"
+status_case9=$?
+set -e
+
+ok=0
+detail=""
+if [ "$status_case9" -ne 4 ]; then
+  ok=1; detail="expected exit 4, got $status_case9: $out_case9"
+elif printf '%s' "$out_case9" | grep -qF "$FIXTURE_URL"; then
+  ok=1; detail="output leaked the configured base URL (INFRA-009)"
+elif printf '%s' "$out_case9" | grep -qF "127.0.0.1"; then
+  ok=1; detail="output leaked the configured host (INFRA-009)"
+elif printf '%s' "$out_case9" | grep -qF ":${PORT}"; then
+  ok=1; detail="output leaked the configured port (INFRA-009)"
+elif printf '%s' "$out_case9" | grep -qF "$REDIRECT_TARGET"; then
+  ok=1; detail="output leaked the origin-supplied redirect target (INFRA-009)"
+elif printf '%s' "$out_case9" | grep -qF "198.51.100.1"; then
+  ok=1; detail="output leaked the origin-supplied redirect target's host (INFRA-009)"
+elif ! printf '%s' "$out_case9" | grep -qE "30[0-9]"; then
+  ok=1; detail="output did not name the 3xx status — a pure-suppression fix would fail this"
+fi
+report "redirect (exit 4, hygiene: no base URL/host/port/redirect target, 3xx status named — INFRA-009)" "$ok" "$detail"
+reset_control
+
+# =====================================================================================
 echo ""
 echo "drift-check-selftest: $PASS_COUNT passed, $FAILURES failed"
 
 echo ""
 echo "--- captured output, all cases (for the hygiene grep) ---"
-printf '%s\n' "$out_case1" "$out_case2" "$out_case3" "${out_case4:-}" "$out_case5" "$out_case6" "$out_case7"
+printf '%s\n' "$out_case1" "$out_case2" "$out_case3" "${out_case4:-}" "$out_case5" "$out_case6" "$out_case7" "$out_case8" "$out_case9"
 echo "--- end captured output ---"
 
 if [ "$FAILURES" -ne 0 ]; then

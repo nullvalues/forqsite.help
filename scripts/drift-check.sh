@@ -78,7 +78,10 @@
 #   - curl's redirect-following is off by default; this script does not turn it on, so
 #     a 3xx response is never followed. It is still explicitly detected as a fetch
 #     failure below, because "the bytes this URL returns" is the claim being checked,
-#     and a redirect means some other URL answered it.
+#     and a redirect means some other URL answered it. The redirect target itself is
+#     never printed (INFRA-009): it is origin-controlled, and on the failure this check
+#     is most likely to meet it is the configured origin echoing itself back. Only the
+#     HTTP status code is reported, plus the fact that it was a redirect.
 #   - The provenance sidecar can only ever add a failure because the bundle
 #     match/drift decision is, and remains, served bytes vs `git show <ref>:<bundle>`
 #     alone — the sidecar's repo_commit, its deployed_at, its claimed bundle sha256
@@ -133,12 +136,32 @@ fi
 
 BASE_URL="${BASE_URL%/}"
 
+# --- Map a curl exit code to a short, destination-free label (INFRA-009) ------------
+# curl's own exit code carries the distinction this script must preserve on a
+# connection-failure path (refused vs unresolved vs timed out) without embedding the
+# destination the way curl's stderr text does. Unmapped codes still name the code and
+# point at curl(1) rather than collapsing to a bare "fetch failed".
+curl_failure_label() {
+  case "$1" in
+    6) echo "could not resolve host" ;;
+    7) echo "failed to connect" ;;
+    28) echo "timed out" ;;
+    *) echo "see curl(1) for exit code $1" ;;
+  esac
+}
+
 # --- Fetch one bundle's served bytes to a file (never a shell variable) --------------
 # Prints a message to stderr and returns 4 on any non-2xx, redirect, connection
-# failure, or timeout. Writes the fetched bytes to "$1/$2" on success.
+# failure, or timeout. Writes the fetched bytes to "$1/$2" on success. No message on
+# any failure path prints the configured base URL, a host or port derived from it, or
+# (on a redirect) the origin-supplied redirect target — only a destination-free
+# label survives (INFRA-009). "$scratch/$bundle.curlerr" may still be written by curl
+# for diagnosability inside the mktemp -d scratch "cleanup" removes; it is never cat'd
+# or otherwise surfaced to stdout or stderr.
 fetch_bundle() {
   local scratch="$1" bundle="$2"
   local url="${BASE_URL}/${bundle}"
+  local display_url="<site>/${bundle}"
   local out status
   set +e
   out="$(curl --silent --show-error \
@@ -151,7 +174,7 @@ fetch_bundle() {
   status=$?
   set -e
   if [ "$status" -ne 0 ]; then
-    echo "drift-check.sh: fetch failed for ${bundle}: $(cat "${scratch}/${bundle}.curlerr")" >&2
+    echo "drift-check.sh: fetch failed for ${display_url}: curl exit ${status} — $(curl_failure_label "$status")" >&2
     return 4
   fi
   local http_code redirect_url
@@ -162,7 +185,7 @@ fetch_bundle() {
       return 0
       ;;
     3??)
-      echo "drift-check.sh: fetch failed for ${bundle}: redirected (${http_code}) to ${redirect_url:-<none>}" >&2
+      echo "drift-check.sh: fetch failed for ${display_url}: redirected (HTTP ${http_code}); redirect target withheld" >&2
       return 4
       ;;
     *)
@@ -176,7 +199,12 @@ fetch_bundle() {
 # of the match decision. A fetch failure, a non-2xx/redirect, or a body that does not
 # parse as the expected fixed shape is reported as a plain line, never an error, and
 # changes no exit code. Returns non-zero (caller-checked, not `set -e`-propagated) on
-# any such failure; success writes the raw body to "$1/site-provenance.json".
+# any such failure; success writes the raw body to "$1/site-provenance.json". It
+# prints no diagnostic of its own today (the caller prints one fixed line on failure,
+# see below) and this is deliberate (INFRA-009): if a diagnostic is ever added here,
+# it must use the same exit-code-plus-placeholder form fetch_bundle uses above, never
+# curl's raw stderr. Its own "$scratch/site-provenance.curlerr" is likewise never
+# printed.
 fetch_provenance() {
   local scratch="$1"
   local url="${BASE_URL}/site-provenance.json"
