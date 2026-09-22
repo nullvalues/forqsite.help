@@ -2,7 +2,7 @@
 id: CONTENT-029
 rail: CONTENT
 title: Record the site-URL ruling in the rule it extends, and scrub what it now covers
-status: draft
+status: complete
 phase: "11"
 story_class: doc
 auth_gated: false
