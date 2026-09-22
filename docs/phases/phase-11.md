@@ -69,6 +69,8 @@ deliberate, recorded state, not an oversight.
 | INFRA-007 | A drift check that compares served bytes to committed bytes | complete |
 | INFRA-008 | Site provenance a reader and a check can both see | complete |
 | CONTENT-028 | Record the procedure, the incident, and the lesson | complete |
+| INFRA-009 | Keep the configured destination out of a failing drift check's output | draft |
+| CONTENT-029 | Record the site-URL ruling in the rule it extends, and scrub what it now covers | draft |
 
 ### INFRA-006 — The deploy procedure
 
@@ -146,6 +148,43 @@ into the three findings' individual repairs.
 
 **Done when** the 2026-09-21 hand deploy is recorded as a dated verification record, and CER-014
 is resolved by INFRA-007 landing.
+
+## CP-11 remediation
+
+The CP-11 security gate passed — no CRITICAL, no HIGH — and filed nine findings. Seven are
+backlog. Two were created by this phase and are fixed here rather than deferred, because both
+are cheap and both undercut something this phase or the operator just established.
+
+### INFRA-009 — Keep the destination out of a failing check's output
+
+**Done when** a failing `scripts/drift-check.sh` run prints no configured value. Its failure
+paths currently emit curl's stderr and the redirect target verbatim, and both embed the base
+URL. `docs/checkpoints.md`, written by CONTENT-028, directs the operator to record that output
+in a committed public file — so this phase built a procedure that publishes the value the
+operator ruled must stay out of the tree.
+
+**Done when** the hygiene assertion covers the failure blocks, not only the success block.
+INFRA-007 scoped its guarantee to the success path; the block an operator actually pastes on a
+failing run was never tested. That gap is why the defect shipped.
+
+**Not done if** the redaction drops the diagnostic. A reader must still be able to tell a
+connection refusal from a timeout from a redirect — replace the value, keep the reason.
+
+### CONTENT-029 — Record the ruling in the rule it extends
+
+**Done when** `docs/ideology.md` § Name the class, not the instance states that the public site
+URL is covered, with the operator's reason: this repository and its product are to be released
+as public sibling repos, and a downstream adopter rebrands both, so the URL names our instance
+rather than the product.
+
+**Done when** the occurrences that rule now covers are generalised — the auditor found them in
+`README.md`, `docs/architecture.md`, `docs/phases/phase-4.md` and `docs/stories/INFRA/INFRA-002.md`.
+Re-derive the list rather than trusting it.
+
+**Not done if** a reader loses the ability to find the live site or to reconstruct the hosting
+arrangement. Phase 10's standard applies: the reason must survive generalisation.
+
+**Not done if** the published bundles are touched. They are out of scope for this phase entirely.
 
 ## Story ordering
 
