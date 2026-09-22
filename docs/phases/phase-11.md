@@ -264,6 +264,11 @@ treated as a materially different risk surface from Phase 10's documentation.
 The same holds, with more force, after round 2: INFRA-010 through INFRA-014 change both scripts
 again, so the re-run must audit the tree as it stands after INFRA-014.
 
+**Re-run done, 2026-09-22, against the tree after INFRA-014.** The stale verdicts were replaced:
+`checkpoint-security` PASS (opus; CER-019 through CER-028 confirmed closed in code, four LOW
+findings filed as CER-033 to CER-036), `checkpoint-docs` PASS (one pre-existing gap filed as
+CER-032), `checkpoint-intent` ALIGNED.
+
 Remaining after INFRA-014: the two gate re-runs above, `checkpoint-intent`, the dark-feature
 scan, `checkpoint-report`, then `record-checkpoint-step checkpoint-tag` → commit the ledger paths
 → `git tag cp-11`.
@@ -308,9 +313,24 @@ this phase, record the management surface before the phase is checkpointed.
 
 ### CP-11 Cold-eyes checklist
 
-- [ ] written-never-read — does anything this phase persists have no reader?
-- [ ] required-never-written — does any read path depend on a value no writer produces?
-- [ ] duplicate state — is any fact now stored twice with independent writers?
-- [ ] half-implementation — is any branch unreachable, or any producer without its consumer?
+- [x] written-never-read — **one gap, filed as CER-031.** `site-provenance.json` is read by
+  `drift-check.sh`. The `.deploy-verified-<stamp>` markers are read by `deploy.sh`'s own prune
+  step. The ssh error scratch file is read by `ssh_reason_label`. But the `.bak-<stamp>` sets,
+  which `deploy.sh`'s header and `docs/architecture.md` both call the "rollback copy", have no
+  documented reader: no procedure says how to roll back. The obvious `mv` would replace the
+  inode and break the per-file bind mount.
+- [x] required-never-written — no gap. `drift-check.sh` reads the sidecar, which `deploy.sh`
+  writes. A host that has never served it needs its one-time bind-mount, and `deploy.sh`'s
+  success block says so. `read-deploy-env.sh` reads `scripts/deploy.env`, which the operator
+  writes from `deploy.env.example`.
+- [x] duplicate state — none with *independent* writers. The deploy target can come from the
+  environment or from `scripts/deploy.env`. Both are operator-written, and INFRA-013 kept one
+  fixed precedence, pinned by selftest case (f). A backup set's verified status lives only in
+  its marker.
+- [x] half-implementation — none found. The reserved exit 42 is produced by all seven remote
+  commands' `cd` and consumed by `ssh_reason_label`. Each `ssh_reason_label` class has a
+  selftest stub mode that reaches it, except the timeout class, whose stub would have to
+  sleep. CER-030 records the one place the prune report is less exact than its message.
 
-— developer fills in after phase completion —
+Filled in by the orchestrator on 2026-09-22 from the code at HEAD, not from memory. Each "no
+gap" above was checked with a grep. Correct any answer that should be the operator's own.
