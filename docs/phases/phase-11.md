@@ -186,6 +186,31 @@ arrangement. Phase 10's standard applies: the reason must survive generalisation
 
 **Not done if** the published bundles are touched. They are out of scope for this phase entirely.
 
+### Gate state — read this before tagging CP-11
+
+`checkpoint-security` is recorded PASS for this phase, and that verdict is **stale**. It was
+recorded on 2026-09-22 against the tree as it stood *before* INFRA-009 and CONTENT-029, and
+those two stories exist because that audit found the defects. The resolver will not re-emit a
+step whose verdict is already recorded, so a session resuming here would tag over an unaudited
+change to `scripts/drift-check.sh`.
+
+**Before `checkpoint-tag`:** re-run `checkpoint-security` and `checkpoint-docs` against the
+remediated tree and re-record both verdicts, then `checkpoint-intent`, the dark-feature scan and
+`checkpoint-report` as normal. Security is worth re-running with an escalated model — this phase
+ships executable code that authenticates to a production host, which the first CP-11 audit
+treated as a materially different risk surface from Phase 10's documentation.
+
+Remaining after CONTENT-029: the two gate re-runs above, `checkpoint-intent`, the dark-feature
+scan, `checkpoint-report`, then `record-checkpoint-step checkpoint-tag` → commit the ledger paths
+→ `git tag cp-11`.
+
+**Carried, not built:** CER-019, CER-021, CER-023 through CER-028 are filed and deliberately not
+fixed here. One observation has no row yet and should get one: CER-014, CER-020 and CER-028 share
+a shape — a guarantee tested on the success path and assumed on the failure path. The stale site
+itself was the same thing at a larger scale. That may be a sharper form of the constraint
+CONTENT-028 added to `docs/ideology.md`, and belongs to a later phase's framing rather than this
+one's.
+
 ## Story ordering
 
 INFRA-006 and INFRA-007 are independent and may run in either order. INFRA-008 follows INFRA-006,
