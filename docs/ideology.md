@@ -190,6 +190,20 @@ This constraint governs the product's source tree, which the reader also has; "N
 the class, not the instance" governs our own deployment, and nothing here grants a
 host name, an absolute path or a machine name of ours any publication right.
 
+### Assert the invariant, not a proxy for it
+
+**Rule:** A check must assert the invariant it claims, not a correlate that is
+merely cheaper to compute; where the two diverge, a green check is wrong.
+
+**Protects:** The meaning of a green gate — that "passing" reflects the claimed
+condition itself, not a proxy a reader mistook for it.
+
+**Rationale:** On 2026-09-21 the live site was found five days stale after
+`cp-8` and `cp-9` both went green, because every gate compared the repository
+to itself. CER-009, CER-011 and CER-012 record the same substitution elsewhere.
+
+**Override path:** Only where the invariant is unobservable, and the check says so, as `drift-check.sh` does for `nginx.conf`.
+
 
 ---
 

@@ -112,6 +112,65 @@ script, and — where the change is interactive/CSS behavior — a headless-brow
 scroll reset or hash routing. The JSON round-trip check is now performed by `verify`
 itself.
 
+**Deploy, drift-check and provenance scripts** (INFRA-006, INFRA-007, INFRA-008, Phase 11).
+Three scripts, each documented in full in its own header comment — this section points at
+those tables rather than restating them:
+
+- `scripts/deploy.sh` — copies the two published bundles to the configured per-site
+  directory over the configured ssh alias, backing up each live file on the remote side to
+  `<name>.bak-<UTC stamp>` (both bundles sharing one stamp) before overwriting it in place.
+  "In place" is required, not stylistic: the remote bind mount follows the file's inode, so
+  a rename-over would leave the container serving an old, unlinked inode while the deploy
+  reported success. After both bundles are copied and hash-verified, `deploy.sh` generates
+  the provenance sidecar (below) and deploys it the same way.
+- `scripts/drift-check.sh` — the served-bytes half of the same invariant. It fetches each
+  bundle over HTTP from the configured site and hashes the response bytes, then hashes
+  `git show <ref>:<bundle>`, and compares the two sha256 values — never the file sitting in
+  the remote directory, which is exactly the proxy a stale bind-mounted inode would pass.
+  `nginx.conf` is also bind-mounted but is never served over HTTP (it only configures
+  `listen`/`server_name`/`root`), so this check is undefined for it and says so in its
+  report rather than silently skipping it.
+- `scripts/make-provenance.sh` — a pure function of `(repo, ref)` that prints the
+  provenance sidecar's JSON to stdout; it reads no configuration and contacts no host.
+
+**Configuration surface.** All three scripts read their settings from the environment,
+falling back to a gitignored `scripts/deploy.env`. That file is never committed; a
+committed `scripts/deploy.env.example` template (all lines commented) is the starting
+point for creating it. The variable names: `FORQSITE_HELP_DEPLOY_HOST` (deploy.sh, ssh
+alias), `FORQSITE_HELP_DEPLOY_DIR` (deploy.sh, remote per-site directory) and
+`FORQSITE_HELP_SITE_URL` (drift-check.sh, base URL to fetch served bytes from).
+
+**The provenance sidecar** (`site-provenance.json`, INFRA-008). `make-provenance.sh`
+generates it and `deploy.sh` writes it last, deliberately: it is deployed only after both
+bundles have landed and hash-verified, because it asserts "this commit is deployed" and
+writing it earlier would publish that claim before it was true. `docker-compose.yml`
+bind-mounts it alongside the two bundles; that mount is a one-time addition requiring a
+container recreate to take effect, and must be added only after the file already exists on
+the remote side (see `deploy.sh`'s header for the bootstrap order), or Docker creates a
+directory at that path instead of bind-mounting a file. `drift-check.sh` fetches it and
+reports its claimed per-bundle sha256 values as a labelled claim alongside the real
+served-vs-committed comparison — it can only ever add a failure (a contradiction between
+its claim and the served bytes) and never supply or suppress a match; trusting it as the
+basis of the drift decision would be the same proxy substitution the served-bytes check
+exists to refuse.
+
+**Exit-code contract.** Each script's own header comment carries its exit-code table —
+restating those tables here would make this doc a second writer of a fact each script
+already owns, and the numbers would drift the first time one is added. At class level, the
+contract all three share: `0` means the invariant the script asserts held; every distinct
+failure mode gets its own code; and a usage error never shares a code with a condition of
+substance (CER-015 records where `deploy.sh` does not yet hold this).
+
+**Verification record — 2026-09-21.** By hand, before this phase's scripts existed: the
+deployment host was found serving `index.html` as committed at `5ec8194` and
+`gap-handoff.html` as committed at `813ce27` (both Phase 7, 2026-09-16), while the
+repository stood at Phase 9 — six commits touching the two bundles, one of them a factual
+correction, had not reached readers. Both live bundles were backed up under a shared
+timestamp and copied; each file's sha256 was verified on the remote side and again locally;
+both pages were then fetched over the reverse proxy, returning `200` with bodies hashing
+equal to the repository's. This incident is what CER-014 and INFRA-006/007/008 exist to
+prevent a gate from missing again.
+
 ---
 
 ## Layer rules

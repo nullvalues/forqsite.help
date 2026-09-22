@@ -2,6 +2,7 @@
 
 Each checkpoint is tagged after all stories in the phase pass the full checkpoint sequence
 (build gate → security audit → intent review).
+Before `checkpoint-tag`, run `scripts/drift-check.sh` by hand and record its exit code and result block in that phase's own checkpoint section below (see `docs/architecture.md` § Deployment for why this step is manual); a drift exit blocks the tag until a deploy corrects it and the check is re-run.
 
 ---
 
