@@ -2,7 +2,7 @@
 id: CONTENT-028
 rail: CONTENT
 title: Record the procedure, the incident, and the lesson
-status: draft
+status: complete
 phase: "11"
 story_class: doc
 auth_gated: false

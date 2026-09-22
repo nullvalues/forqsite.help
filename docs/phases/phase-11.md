@@ -68,7 +68,7 @@ deliberate, recorded state, not an oversight.
 | INFRA-006 | A deploy procedure that survives the person who ran it | complete |
 | INFRA-007 | A drift check that compares served bytes to committed bytes | complete |
 | INFRA-008 | Site provenance a reader and a check can both see | complete |
-| CONTENT-028 | Record the procedure, the incident, and the lesson | draft |
+| CONTENT-028 | Record the procedure, the incident, and the lesson | complete |
 
 ### INFRA-006 — The deploy procedure
 
