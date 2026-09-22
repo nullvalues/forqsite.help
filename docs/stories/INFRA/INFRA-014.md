@@ -2,7 +2,7 @@
 id: INFRA-014
 rail: INFRA
 title: Keep the configured destination out of the deploy's transport errors
-status: draft
+status: complete
 phase: "11"
 auth_gated: false
 schema_introduces: false
