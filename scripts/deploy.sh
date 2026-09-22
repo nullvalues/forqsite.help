@@ -81,6 +81,18 @@
 #     overwritten in place (copied over the existing file), never replaced by renaming a
 #     new file over it — a rename would leave the container serving the old, now-unlinked
 #     inode while the deploy appeared to succeed.
+#   - Transport errors never print the configured target (CER-028, INFRA-014). Every
+#     ssh call is routed through run_ssh(), which captures ssh's own stderr and the
+#     remote shell's stderr to a scratch file — never printed, whole or in part — and
+#     a failure prints a fixed reason label instead (e.g. "the connection was
+#     refused"). Interactive prompts (host-key questions, passwords,
+#     keyboard-interactive) are unaffected: OpenSSH's read_passphrase() writes every
+#     one of them to the controlling tty, not to stderr, even when stdin is a pipe.
+#     The accepted cost is that server banners and the "Permanently added ... to the
+#     list of known hosts" notice are no longer shown, on success or failure alike.
+#     BatchMode=yes, -q and LogLevel=QUIET were all rejected: BatchMode disables every
+#     prompt (breaking interactive authentication), and -q/LogLevel=QUIET suppress the
+#     very messages the reason labels are derived from. No ssh option is added.
 
 set -euo pipefail
 
@@ -90,6 +102,14 @@ BUNDLES=(index.html gap-handoff.html)
 BACKUP_KEEP=5
 REF="HEAD"
 DRY_RUN=0
+
+# Reserved remote exit code (INFRA-014). Distinct from 1 (a step's own generic
+# remote failure), 5 (transport/remote failure) and 255 (ssh itself failed before
+# the remote command ran). Every remote command's `cd` into the configured
+# directory exits this code on failure, with its own stderr silenced, so a missing
+# or unenterable directory is detected by exit code, never by parsing the remote
+# shell's own wording — that wording varies by shell and locale.
+REMOTE_DIR_MISSING_EXIT=42
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -167,13 +187,68 @@ sq() {
   printf "'%s'" "$s"
 }
 
+# --- ssh wrapper (CER-028, INFRA-014) -------------------------------------------------
+# The single call site through which every ssh invocation runs. Only fd 2 is
+# redirected, to $SSH_ERR_FILE (a scratch file created after the dry-run exit below,
+# removed by an EXIT trap). ssh's own stdout and this process's stdin are untouched,
+# so `remote_out="$(run_ssh ...)"` and the piped-stdin copy steps behave exactly as an
+# unredirected call below would, and interactive prompts are unaffected (see header
+# note). Returns ssh's own exit status.
+run_ssh() {
+  ssh "$HOST" "$1" 2>"$SSH_ERR_FILE"
+}
+
+# --- Failure classifier (CER-028, INFRA-014) ------------------------------------------
+# Reads $SSH_ERR_FILE — the scratch file the most recent run_ssh call captured — and
+# the exit status passed as $1, and prints exactly one fixed reason label. Never
+# prints any part of the captured file: every check below is a grep -q whose result,
+# never its output, drives the case. Labels are fixed strings; nothing captured is
+# ever interpolated into them.
+ssh_reason_label() {
+  local status="$1"
+  if [ "$status" -eq 255 ]; then
+    # ssh itself failed before the remote command ran.
+    if grep -q 'Could not resolve hostname' "$SSH_ERR_FILE" 2>/dev/null; then
+      echo "the host would not resolve"
+    elif grep -q 'Connection refused' "$SSH_ERR_FILE" 2>/dev/null; then
+      echo "the connection was refused"
+    elif grep -q 'timed out' "$SSH_ERR_FILE" 2>/dev/null; then
+      echo "the connection timed out"
+    elif grep -q 'Host key verification failed' "$SSH_ERR_FILE" 2>/dev/null; then
+      echo "host key verification failed"
+    elif grep -q 'Permission denied (' "$SSH_ERR_FILE" 2>/dev/null; then
+      echo "authentication was refused"
+    elif grep -q 'connect to host' "$SSH_ERR_FILE" 2>/dev/null; then
+      echo "could not connect to the host"
+    else
+      echo "ssh failed before the remote command ran (exit 255); ssh's own diagnostic text is withheld because it names the configured target — run ssh -v <alias> by hand to see it"
+    fi
+  elif [ "$status" -eq "$REMOTE_DIR_MISSING_EXIT" ]; then
+    echo "the remote directory is missing or cannot be entered"
+  else
+    # Any other status: the remote command itself failed. Match this script's own
+    # fixed remote refusal texts to their labels.
+    if grep -q 'remote has no mktemp' "$SSH_ERR_FILE" 2>/dev/null; then
+      echo "the remote has no mktemp"
+    elif grep -q 'remote has no sha256sum' "$SSH_ERR_FILE" 2>/dev/null; then
+      echo "the remote has no sha256sum"
+    elif grep -q 'backup name already exists' "$SSH_ERR_FILE" 2>/dev/null; then
+      echo "the backup name already exists"
+    elif grep -q 'verified marker name already exists' "$SSH_ERR_FILE" 2>/dev/null; then
+      echo "the marker name already exists"
+    else
+      echo "the remote command failed (exit ${status}); its own diagnostic text is withheld because it may name the configured target — run ssh -v <alias> by hand to see it"
+    fi
+  fi
+}
+
 # --- Remote command builders ---------------------------------------------------------
 # Backup: refuse if the backup name exists in any form (a dangling symlink included),
 # otherwise write it under noclobber so a name planted between the check and the write
 # makes the write fail rather than follow it.
 remote_backup_cmd() {
   local name="$1" bak="$1.bak-$STAMP"
-  printf '%s' "cd $(sq "$DIR") || exit 1
+  printf '%s' "cd $(sq "$DIR") 2>/dev/null || exit ${REMOTE_DIR_MISSING_EXIT}
 if [ -f $(sq "$name") ]; then
   if [ -e $(sq "$bak") ] || [ -L $(sq "$bak") ]; then
     echo $(sq "deploy.sh: backup name already exists for ${name}") >&2
@@ -191,7 +266,7 @@ fi"
 # its inode and mode, so the live file is never chmod-ed unconditionally.
 remote_copy_cmd() {
   local name="$1"
-  printf '%s' "cd $(sq "$DIR") || exit 1
+  printf '%s' "cd $(sq "$DIR") 2>/dev/null || exit ${REMOTE_DIR_MISSING_EXIT}
 if ! command -v mktemp >/dev/null 2>&1; then echo 'deploy.sh: remote has no mktemp' >&2; exit 5; fi
 stage=\$(mktemp $(sq "./.${name}.deploy-XXXXXXXXXX")) || exit 1
 trap 'rm -f -- \"\$stage\"' EXIT
@@ -238,6 +313,14 @@ if [ "$DRY_RUN" -eq 1 ]; then
   exit 0
 fi
 
+# --- ssh error-capture scratch (CER-028, INFRA-014) ---------------------------------
+# Created only past the dry-run exit above, since a dry run never invokes ssh.
+# Removed by this EXIT trap so no captured text — which may name the configured
+# alias, host or directory — ever outlives this process.
+SSH_SCRATCH_DIR="$(mktemp -d)"
+trap 'rm -rf "$SSH_SCRATCH_DIR"' EXIT
+SSH_ERR_FILE="$SSH_SCRATCH_DIR/ssh-stderr"
+
 # --- Per-bundle deploy: one ssh invocation per step ---------------------------------
 declare -A REMOTE_SHA
 declare -A LOCAL_SHA
@@ -245,23 +328,33 @@ declare -A LOCAL_SHA
 for bundle in "${BUNDLES[@]}"; do
   LOCAL_SHA["$bundle"]="$(git show "${REF}:${bundle}" | sha256sum | cut -d' ' -f1)"
   # Step 1: backup the live file on the far side, if present.
-  if ! ssh "$HOST" "$(remote_backup_cmd "$bundle")"; then
+  status=0
+  run_ssh "$(remote_backup_cmd "$bundle")" || status=$?
+  if [ "$status" -ne 0 ]; then
     echo "deploy.sh: remote backup step failed for ${bundle}" >&2
+    echo "deploy.sh: reason: $(ssh_reason_label "$status")" >&2
     exit 5
   fi
 
   # Step 2: stream the ref's bytes to a mktemp stage on the far side, then overwrite
   # the live file in place (never rename over it — see header note on bind-mount
   # inode following).
-  if ! git show "${REF}:${bundle}" | ssh "$HOST" "$(remote_copy_cmd "$bundle")"; then
+  status=0
+  git show "${REF}:${bundle}" | run_ssh "$(remote_copy_cmd "$bundle")" || status=$?
+  if [ "$status" -ne 0 ]; then
     echo "deploy.sh: remote copy step failed for ${bundle}" >&2
+    echo "deploy.sh: reason: $(ssh_reason_label "$status")" >&2
     exit 5
   fi
 
   # Step 3: hash the remote file and compare against the ref's bytes, hashed locally.
-  verify_cmd="cd $(sq "$DIR") && if ! command -v sha256sum >/dev/null 2>&1; then echo deploy.sh: remote has no sha256sum >&2; exit 5; fi; sha256sum $(sq "$bundle")"
-  if ! remote_out="$(ssh "$HOST" "$verify_cmd")"; then
+  verify_cmd="cd $(sq "$DIR") 2>/dev/null || exit ${REMOTE_DIR_MISSING_EXIT}
+if ! command -v sha256sum >/dev/null 2>&1; then echo deploy.sh: remote has no sha256sum >&2; exit 5; fi; sha256sum $(sq "$bundle")"
+  status=0
+  remote_out="$(run_ssh "$verify_cmd")" || status=$?
+  if [ "$status" -ne 0 ]; then
     echo "deploy.sh: remote verify step failed for ${bundle}" >&2
+    echo "deploy.sh: reason: $(ssh_reason_label "$status")" >&2
     exit 5
   fi
   REMOTE_SHA["$bundle"]="$(printf '%s\n' "$remote_out" | cut -d' ' -f1)"
@@ -289,24 +382,34 @@ SIDECAR_CONTENT="$("$MAKE_PROVENANCE_SH" --ref "$REF")"
 SIDECAR_LOCAL_SHA="$(printf '%s' "$SIDECAR_CONTENT" | sha256sum | cut -d' ' -f1)"
 
 # Step 1: backup the live sidecar on the far side, if present.
-if ! ssh "$HOST" "$(remote_backup_cmd "$SIDECAR_NAME")"; then
+status=0
+run_ssh "$(remote_backup_cmd "$SIDECAR_NAME")" || status=$?
+if [ "$status" -ne 0 ]; then
   echo "deploy.sh: remote backup step failed for ${SIDECAR_NAME}" >&2
+  echo "deploy.sh: reason: $(ssh_reason_label "$status")" >&2
   exit 5
 fi
 
 # Step 2: stream the generated bytes to a mktemp stage on the far side, then overwrite
 # the live file in place (never rename over it — see header note on bind-mount inode
 # following).
-if ! printf '%s' "$SIDECAR_CONTENT" | ssh "$HOST" "$(remote_copy_cmd "$SIDECAR_NAME")"; then
+status=0
+printf '%s' "$SIDECAR_CONTENT" | run_ssh "$(remote_copy_cmd "$SIDECAR_NAME")" || status=$?
+if [ "$status" -ne 0 ]; then
   echo "deploy.sh: remote copy step failed for ${SIDECAR_NAME}" >&2
+  echo "deploy.sh: reason: $(ssh_reason_label "$status")" >&2
   exit 5
 fi
 
 # Step 3: hash the remote file and compare against the locally-computed hash of the
 # generated bytes.
-sidecar_verify_cmd="cd $(sq "$DIR") && if ! command -v sha256sum >/dev/null 2>&1; then echo deploy.sh: remote has no sha256sum >&2; exit 5; fi; sha256sum $(sq "$SIDECAR_NAME")"
-if ! sidecar_remote_out="$(ssh "$HOST" "$sidecar_verify_cmd")"; then
+sidecar_verify_cmd="cd $(sq "$DIR") 2>/dev/null || exit ${REMOTE_DIR_MISSING_EXIT}
+if ! command -v sha256sum >/dev/null 2>&1; then echo deploy.sh: remote has no sha256sum >&2; exit 5; fi; sha256sum $(sq "$SIDECAR_NAME")"
+status=0
+sidecar_remote_out="$(run_ssh "$sidecar_verify_cmd")" || status=$?
+if [ "$status" -ne 0 ]; then
   echo "deploy.sh: remote verify step failed for ${SIDECAR_NAME}" >&2
+  echo "deploy.sh: reason: $(ssh_reason_label "$status")" >&2
   exit 5
 fi
 SIDECAR_REMOTE_SHA="$(printf '%s\n' "$sidecar_remote_out" | cut -d' ' -f1)"
@@ -323,19 +426,25 @@ fi
 # kept even when other stamps sort after it (clock skew).
 MARKER_PREFIX=".deploy-verified-"
 marker_name="${MARKER_PREFIX}${STAMP}"
-marker_cmd="cd $(sq "$DIR") || exit 1
+marker_cmd="cd $(sq "$DIR") 2>/dev/null || exit ${REMOTE_DIR_MISSING_EXIT}
 if [ -e $(sq "$marker_name") ] || [ -L $(sq "$marker_name") ]; then echo 'deploy.sh: verified marker name already exists' >&2; exit 5; fi
 set -C
 : > $(sq "$marker_name")"
-if ! ssh "$HOST" "$marker_cmd"; then
+status=0
+run_ssh "$marker_cmd" || status=$?
+if [ "$status" -ne 0 ]; then
   echo "deploy.sh: every file verified, but the verified marker for stamp ${STAMP} could not be written; no backups were pruned" >&2
+  echo "deploy.sh: reason: $(ssh_reason_label "$status")" >&2
   exit 5
 fi
 
-list_cmd="cd $(sq "$DIR") || exit 1
+list_cmd="cd $(sq "$DIR") 2>/dev/null || exit ${REMOTE_DIR_MISSING_EXIT}
 for f in ${MARKER_PREFIX}*; do if [ -e \"\$f\" ] || [ -L \"\$f\" ]; then printf '%s\\n' \"\$f\"; fi; done"
-if ! marker_listing="$(ssh "$HOST" "$list_cmd")"; then
+status=0
+marker_listing="$(run_ssh "$list_cmd")" || status=$?
+if [ "$status" -ne 0 ]; then
   echo "deploy.sh: every file verified, but listing verified markers failed; no backups were pruned" >&2
+  echo "deploy.sh: reason: $(ssh_reason_label "$status")" >&2
   exit 5
 fi
 
@@ -363,10 +472,13 @@ PRUNED=()
 for s in "${PRUNE_STAMPS[@]}"; do
   # Backups first, marker last: a set whose backups could not all be removed keeps
   # its marker, so a later deploy retries it.
-  prune_cmd="cd $(sq "$DIR") || exit 1
+  prune_cmd="cd $(sq "$DIR") 2>/dev/null || exit ${REMOTE_DIR_MISSING_EXIT}
 rm -f -- $(sq "index.html.bak-${s}") $(sq "gap-handoff.html.bak-${s}") $(sq "site-provenance.json.bak-${s}") && rm -f -- $(sq "${MARKER_PREFIX}${s}")"
-  if ! ssh "$HOST" "$prune_cmd"; then
+  status=0
+  run_ssh "$prune_cmd" || status=$?
+  if [ "$status" -ne 0 ]; then
     echo "deploy.sh: every file verified, but pruning failed at backup set ${s} (that set may be partly removed; while its marker remains, a later deploy retries it)" >&2
+    echo "deploy.sh: reason: $(ssh_reason_label "$status")" >&2
     if [ "${#PRUNED[@]}" -gt 0 ]; then
       echo "deploy.sh: pruned before the failure: ${PRUNED[*]}" >&2
     else

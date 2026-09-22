@@ -49,6 +49,21 @@
 #                          is never read)
 #      f. precedence      — env DIR a nonexistent path, env HOST unset, file sets both:
 #                          exit 0 into the file's DIR
+#  14. transport errors (CER-028, INFRA-014) — the stub emits realistic ssh/remote-shell
+#      text naming the alias or directory in force and exits without running the real
+#      command; each case asserts exit 5, that the configured alias and directory are
+#      absent from the captured output, and that the expected reason label is present:
+#      a. resolve   — "Could not resolve hostname", exit 255 — "the host would not resolve"
+#      b. refused   — "Connection refused", exit 255 — "the connection was refused"
+#      c. auth      — "Permission denied (publickey)", exit 255 — "authentication was refused"
+#      d. hostkey   — "Host key verification failed", exit 255 — "host key verification failed"
+#      e. remote-text — a remote cp refusal, exit 1 — generic fallback label naming exit 1
+#      f. dir missing — a target directory that is never created, no mode file (the real
+#                        dash cd fails): exit 5 — "the remote directory is missing or
+#                        cannot be entered"
+#      Precondition: the stub is invoked directly in resolve mode and in remote-text
+#      mode; its raw stderr is asserted to contain the alias and the directory,
+#      respectively, so the leak-detection assertions above are not vacuous.
 #
 # Determinism: deploy.sh refuses a deploy whose one-second backup stamp already exists in
 # its target (INFRA-012). So every deploy run that can reach the backup step starts from a
@@ -76,6 +91,13 @@ FIXTURE_TARGET="$WORK_DIR/fixture-target"
 STUB_BIN="$WORK_DIR/stub-bin"
 SSH_MARKER="$WORK_DIR/ssh-marker"
 CORRUPT_FLAG="$WORK_DIR/corrupt-flag"
+# INFRA-014: when present, the stub emits one mode's canned ssh/remote-shell text and
+# exit status without running the remote command at all. STUB_DIR_HINT_FILE supplies
+# the "directory in force" text for the remote-text mode, whose canned line names a
+# directory (the real cd never runs in that mode, so the stub cannot read it from the
+# command it never executes).
+STUB_MODE_FILE="$WORK_DIR/stub-mode"
+STUB_DIR_HINT_FILE="$WORK_DIR/stub-dir-hint"
 
 FAILURES=0
 PASS_COUNT=0
@@ -108,15 +130,52 @@ mkdir -p "$FIXTURE_TARGET"
 mkdir -p "$STUB_BIN"
 cat > "$STUB_BIN/ssh" <<STUB
 #!/usr/bin/env bash
-# Stub ssh for deploy-selftest.sh: ignores its first argument (the host alias) and
-# runs the remainder of its arguments with dash -c (a real POSIX sh, not bash)
-# against the fixture target directory, recording that it was invoked. Running under
-# dash rather than bash is deliberate (CER-025): bash's \$'...' quoting only works
-# under bash, and running the stub under bash would let that bash-only quoting pass
-# even though the far account's login shell may be POSIX sh.
+# Stub ssh for deploy-selftest.sh (INFRA-006, extended INFRA-014). Records the host
+# alias (\$1) before shift, then either:
+#   - with $STUB_MODE_FILE present: emits one mode's realistic ssh or remote-shell
+#     text to stderr and exits with that mode's status, without running the remote
+#     command at all;
+#   - otherwise: runs the remainder of its arguments with dash -c (a real POSIX sh,
+#     not bash) against the fixture target directory, recording that it was invoked.
+# Running the remote command under dash rather than bash is deliberate (CER-025):
+# bash's \$'...' quoting only works under bash, and running the stub under bash would
+# let that bash-only quoting pass even though the far account's login shell may be
+# POSIX sh. Every call, mode or not, also writes a realistic "Permanently added"
+# known-hosts notice to stderr, naming the alias, so the happy-path hygiene check
+# (deploy-selftest.sh case 3) is asserting over real alias-bearing noise, not silence.
+alias="\$1"
 echo "invoked" >> "$SSH_MARKER"
+echo "Warning: Permanently added '\$alias' (ED25519) to the list of known hosts." >&2
 shift
 cmd="\$1"
+if [ -f "$STUB_MODE_FILE" ]; then
+  mode="\$(cat "$STUB_MODE_FILE")"
+  case "\$mode" in
+    resolve)
+      echo "ssh: Could not resolve hostname \$alias: Name or service not known" >&2
+      exit 255
+      ;;
+    refused)
+      echo "ssh: connect to host \$alias port 22: Connection refused" >&2
+      exit 255
+      ;;
+    auth)
+      echo "someuser@\$alias: Permission denied (publickey)." >&2
+      exit 255
+      ;;
+    hostkey)
+      echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" >&2
+      echo "@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED for \$alias!    @" >&2
+      echo "Host key verification failed." >&2
+      exit 255
+      ;;
+    remote-text)
+      dir_hint="\$(cat "$STUB_DIR_HINT_FILE" 2>/dev/null || true)"
+      echo "cp: cannot create regular file '\$dir_hint/index.html': Permission denied" >&2
+      exit 1
+      ;;
+  esac
+fi
 out="\$(dash -c "\$cmd")"
 status=\$?
 case "\$cmd" in
@@ -920,6 +979,131 @@ fi
 report "config file, precedence (env HOST unset, env DIR overridden by the file's; exit 0 into the file's DIR)" "$ok" "$detail"
 rm -f "$ENV_FILE"
 
+export FORQSITE_HELP_DEPLOY_DIR="$FIXTURE_TARGET"
+
+# =====================================================================================
+# Case 14: transport errors (CER-028, INFRA-014) — deploy.sh never prints the
+# configured alias or directory on any ssh/remote-shell failure, and still prints a
+# fixed reason label. An alias distinct from fixture-host-alias is used throughout, so
+# the leak grep below is unambiguous (it could otherwise match deploy.sh's own
+# unrelated argument-parsing text that happens to reuse "fixture-host-alias").
+# =====================================================================================
+TRANSPORT_HOST="fixture-host-alias-transport"
+TRANSPORT_TARGET="$WORK_DIR/transport-target"
+
+assert_no_leak_with_reason() {
+  local name="$1" status="$2" out="$3" reason_substr="$4"
+  local ok=0 detail=""
+  if [ "$status" -ne 5 ]; then
+    ok=1; detail="expected exit 5, got $status: $out"
+  elif printf '%s' "$out" | grep -F -- "$TRANSPORT_HOST" >/dev/null; then
+    ok=1; detail="output contains the configured alias"
+  elif printf '%s' "$out" | grep -F -- "$TRANSPORT_TARGET" >/dev/null; then
+    ok=1; detail="output contains the configured directory"
+  elif ! printf '%s' "$out" | grep -F -- "$reason_substr" >/dev/null; then
+    ok=1; detail="output does not contain the expected reason label ($reason_substr): $out"
+  fi
+  report "$name" "$ok" "$detail"
+}
+
+run_transport_case() {
+  local mode="$1" reason_substr="$2" name="$3"
+  fresh_target "$TRANSPORT_TARGET"
+  rm -f "$SSH_MARKER"
+  export FORQSITE_HELP_DEPLOY_HOST="$TRANSPORT_HOST"
+  export FORQSITE_HELP_DEPLOY_DIR="$TRANSPORT_TARGET"
+  echo "$mode" > "$STUB_MODE_FILE"
+  set +e
+  out="$(run_deploy 2>&1)"
+  status=$?
+  set -e
+  rm -f "$STUB_MODE_FILE"
+  assert_no_leak_with_reason "$name" "$status" "$out" "$reason_substr"
+}
+
+run_transport_case resolve "the host would not resolve" \
+  "transport: host would not resolve (exit 5, no alias/dir leak, reason label)"
+run_transport_case refused "the connection was refused" \
+  "transport: connection refused (exit 5, no alias/dir leak, reason label)"
+run_transport_case auth "authentication was refused" \
+  "transport: authentication refused (exit 5, no alias/dir leak, reason label)"
+run_transport_case hostkey "host key verification failed" \
+  "transport: host key verification failed (exit 5, no alias/dir leak, reason label)"
+
+# remote-text: the remote command itself fails (exit 1, not ssh). Its label is the
+# generic fallback naming the exit code, since the canned cp refusal matches none of
+# deploy.sh's own fixed remote-refusal texts.
+fresh_target "$TRANSPORT_TARGET"
+rm -f "$SSH_MARKER"
+export FORQSITE_HELP_DEPLOY_HOST="$TRANSPORT_HOST"
+export FORQSITE_HELP_DEPLOY_DIR="$TRANSPORT_TARGET"
+echo "$TRANSPORT_TARGET" > "$STUB_DIR_HINT_FILE"
+echo "remote-text" > "$STUB_MODE_FILE"
+set +e
+out_remotetext="$(run_deploy 2>&1)"
+status_remotetext=$?
+set -e
+rm -f "$STUB_MODE_FILE" "$STUB_DIR_HINT_FILE"
+assert_no_leak_with_reason \
+  "transport: remote command failure (exit 5, no alias/dir leak, reason names exit 1)" \
+  "$status_remotetext" "$out_remotetext" "exit 1"
+
+# Remote directory missing — the real dash cd fails (no mode file), decided by exit
+# code alone (REMOTE_DIR_MISSING_EXIT), never by parsing the shell's own wording.
+MISSING_TARGET_DIR="$WORK_DIR/never-created-transport-target"
+rm -rf "$MISSING_TARGET_DIR"
+rm -f "$SSH_MARKER"
+export FORQSITE_HELP_DEPLOY_HOST="$TRANSPORT_HOST"
+export FORQSITE_HELP_DEPLOY_DIR="$MISSING_TARGET_DIR"
+set +e
+out_dirmissing="$(run_deploy 2>&1)"
+status_dirmissing=$?
+set -e
+ok=0
+detail=""
+if [ "$status_dirmissing" -ne 5 ]; then
+  ok=1; detail="expected exit 5, got $status_dirmissing: $out_dirmissing"
+elif printf '%s' "$out_dirmissing" | grep -F -- "$TRANSPORT_HOST" >/dev/null; then
+  ok=1; detail="output contains the configured alias"
+elif printf '%s' "$out_dirmissing" | grep -F -- "$MISSING_TARGET_DIR" >/dev/null; then
+  ok=1; detail="output contains the configured directory"
+elif ! printf '%s' "$out_dirmissing" | grep -q "remote directory is missing or cannot be entered"; then
+  ok=1; detail="output does not contain the expected reason label: $out_dirmissing"
+fi
+report "transport: remote directory missing (exit 5, no alias/dir leak, reason label)" "$ok" "$detail"
+
+# Precondition (INFRA-014): the stub's own raw text really does carry the configured
+# value, so the leak-detection assertions above are not vacuous.
+PRECOND_ALIAS="precondition-alias-distinct-value"
+rm -f "$SSH_MARKER"
+echo "resolve" > "$STUB_MODE_FILE"
+set +e
+precond_resolve_out="$("$STUB_BIN/ssh" "$PRECOND_ALIAS" "true" 2>&1 >/dev/null)"
+set -e
+rm -f "$STUB_MODE_FILE"
+ok=0
+detail=""
+if ! printf '%s' "$precond_resolve_out" | grep -F -- "$PRECOND_ALIAS" >/dev/null; then
+  ok=1; detail="stub's raw resolve-mode stderr does not contain the alias — the leak assertions above would be vacuous: $precond_resolve_out"
+fi
+report "precondition: stub resolve-mode stderr carries the alias" "$ok" "$detail"
+
+PRECOND_DIR="$WORK_DIR/precondition-directory-distinct-value"
+rm -f "$SSH_MARKER"
+echo "$PRECOND_DIR" > "$STUB_DIR_HINT_FILE"
+echo "remote-text" > "$STUB_MODE_FILE"
+set +e
+precond_remotetext_out="$("$STUB_BIN/ssh" "fixture-host-alias" "true" 2>&1 >/dev/null)"
+set -e
+rm -f "$STUB_MODE_FILE" "$STUB_DIR_HINT_FILE"
+ok=0
+detail=""
+if ! printf '%s' "$precond_remotetext_out" | grep -F -- "$PRECOND_DIR" >/dev/null; then
+  ok=1; detail="stub's raw remote-text-mode stderr does not contain the directory — the leak assertions above would be vacuous: $precond_remotetext_out"
+fi
+report "precondition: stub remote-text-mode stderr carries the directory" "$ok" "$detail"
+
+export FORQSITE_HELP_DEPLOY_HOST="fixture-host-alias"
 export FORQSITE_HELP_DEPLOY_DIR="$FIXTURE_TARGET"
 
 # =====================================================================================
