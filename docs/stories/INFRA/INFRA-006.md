@@ -2,7 +2,7 @@
 id: INFRA-006
 rail: INFRA
 title: A deploy procedure that survives the person who ran it
-status: draft
+status: complete
 phase: "11"
 story_class: code
 auth_gated: false
