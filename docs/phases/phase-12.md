@@ -107,6 +107,33 @@ CONTENT-030 runs first, because both later stories work from its manifest and th
 commit it records. CONTENT-031 and CONTENT-032 both edit both pages, so they run one after
 the other, CONTENT-031 first. Each merges before the next branches.
 
+## After this phase: the path to automatic releases
+
+Recorded 2026-09-23 so that it survives between sessions. This is not in this phase's scope.
+The operator's goal is for forqsite.help to ship automatically, matching the current forqsite
+build. Measured against that goal:
+
+- **Deploy is close.** `deploy.sh` and `drift-check.sh` are verified end to end against
+  production. They are run by hand from a host with `scripts/deploy.env`. Neither repo has CI.
+- **The claims manifest is missing.** This phase builds it.
+- **A stale-claim check is missing.** Given the manifest, a checker can re-examine each
+  claim's evidence at a new forqsite commit and list the claims whose evidence changed.
+- **Rewriting a claim needs judgment.** Automation can detect the need and draft the change;
+  a person still reviews the fix.
+- **forqsite has no release event.** `package.json` is at `0.0.0` and there were about 138
+  commits in the week to 2026-09-23. The `cp-PM*-main` checkpoint tags are the natural
+  trigger.
+- **`docs/brief.md` conflicts with the goal.** It rules out real-time sync with forqsite and
+  requires no build step. Revise it before any automation is built.
+
+Proposed sequence:
+- **Phase 13:** revise the brief, then build a stale-claim checker keyed on forqsite
+  checkpoint tags.
+- **Phase 14:** a release job. When nothing is stale it restamps and deploys; when something
+  is, it opens the stale claims for review.
+
+Fully hands-off releases are realistic only when no claim has gone stale.
+
 ## Schema delivery
 
 For each new persistent schema object (table, collection, migration) introduced in
