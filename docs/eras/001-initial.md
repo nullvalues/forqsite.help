@@ -37,3 +37,4 @@ static site that survives a forqsite outage — and track the dev→prod gap bac
 | 9 | Close CP-8: the defect the checklist missed, and the wiring that predates the convention | complete |
 | 10 | Name the class, not the instance — and close the backlog by resolving, never deleting | complete |
 | 11 | Make the deploy repeatable, and make drift visible | complete |
+| 12 | One stamp per release: re-verify every published claim against one forqsite commit | planned |
