@@ -112,4 +112,55 @@ scope, but the two blocking docs findings alone did not warrant it.
 
 ---
 
+## cp-11
+
+**Phase:** 11 — Make the deploy repeatable, and make drift visible
+**Tag command:** `git tag cp-11 && git push origin main --tags`
+
+**Acceptance:** All 11 stories complete: INFRA-006..014, CONTENT-028 and CONTENT-029. The
+phase grew twice. The CP-11 security gate's first run added INFRA-009 and CONTENT-029. The
+`cer-do-now` guard then refused the checkpoint, and the operator pulled in all eight
+remaining audit findings as round 2 (INFRA-010..014). Three stories needed a second
+attempt: CONTENT-029, INFRA-012 and INFRA-013. Each first attempt failed on a real defect,
+and each fix went into the spec before the retry.
+
+**Gates:** the first security and docs verdicts were stale once remediation changed both
+scripts, so both were re-run against the tree after INFRA-014. security PASS (opus; CER-019
+to CER-028 confirmed closed in code; four LOW findings filed as CER-033 to CER-036). docs
+PASS. intent ALIGNED. dark-feature-scan PASS.
+
+**Drift check: run after the tag, not before it.** The step this file's header requires was
+skipped: `cp-11` was tagged on 2026-09-22 without it, because the build host had no deploy
+configuration. That is the same gap this phase exists to close. The check was run on
+2026-09-23, once the configuration existed. First run, exit 0:
+
+```
+index.html          ok  5890637970f251fbfcf460241a208fdd7d927635aba992e80f6161737f88ed05
+gap-handoff.html    ok  d774cb39effc7d5f4d02d39ae4fec621c3d3662fb1fef01c4e8a0f6203faffc6
+provenance         absent or unreadable — the bundle result above does not depend on it
+result             ok — served bytes match the ref for all 2 bundles
+```
+
+The bundles were current, but the provenance sidecar had never been served. `deploy.sh` had
+never run against production; the last deploy was the manual one recorded in
+`docs/architecture.md`. The container also had no bind mount for the sidecar. Fixed in the
+bootstrap order `deploy.sh`'s header requires: `deploy.sh` published `21e6e2a` (all three
+files verified on the far side), the sidecar mount was added to the compose file, and the
+container was recreated. Re-run, exit 0:
+
+```
+ref                21e6e2acbad54dfb2aabe4d49e104e86c8eb75e8  21e6e2a
+index.html          ok  5890637970f251fbfcf460241a208fdd7d927635aba992e80f6161737f88ed05
+gap-handoff.html    ok  d774cb39effc7d5f4d02d39ae4fec621c3d3662fb1fef01c4e8a0f6203faffc6
+provenance         claims 21e6e2a deployed 2026-09-23T02:31:14Z  (claim, not the basis of the result above)
+result             ok — served bytes match the ref for all 2 bundles
+```
+
+**Lesson recorded:** the drift check is not optional when the checking host lacks the
+configuration. A missing configuration is a reason to stop and ask, never a reason to
+skip the step. Tagging without the check reproduced, in small, the proxy substitution this
+phase names: "the gates are green" stood in for "the site is what we committed."
+
+---
+
 _(Add a checkpoint section for each phase. Tag only after full checkpoint sequence passes.)_
