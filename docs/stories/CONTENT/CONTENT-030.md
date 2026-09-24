@@ -2,7 +2,7 @@
 id: CONTENT-030
 rail: CONTENT
 title: Inventory every stamped claim into a committed claims manifest
-status: draft
+status: complete
 phase: "12"
 story_class: doc
 auth_gated: false
