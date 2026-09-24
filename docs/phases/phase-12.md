@@ -52,6 +52,14 @@ list of what each claim asserts and where in forqsite the evidence lives.
   wrong. Gaps are closed only when forqsite has closed them. Wording changes for their own
   sake are out.
 
+## Release commit
+
+This phase verifies against one forqsite commit:
+`nullvalues/forqsite@1fda3228322d5ad779f44c321c4013ccd247b3fa`, committed 2026-09-24 and
+pinned 2026-09-24 (the tip of `main` in the forqsite repository when CONTENT-030 was built).
+The authoritative copy is the `release` object in `docs/claims-manifest.json`. If the two
+ever disagree, the manifest wins.
+
 ## Stories
 
 | ID | Title | Status |

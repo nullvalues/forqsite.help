@@ -1,0 +1,1027 @@
+{
+  "release": {
+    "repo": "nullvalues/forqsite",
+    "commit": "1fda3228322d5ad779f44c321c4013ccd247b3fa",
+    "committed": "2026-09-24",
+    "pinned": "2026-09-24"
+  },
+  "stamps": [
+    {
+      "id": "S-01",
+      "page": "index.html",
+      "location": "Sidebar, under the \"Known gaps →\" link (every route)",
+      "text": "repo: nullvalues/forqsite@17b78645<br>verified: 2026-09-16",
+      "commit": "17b78645",
+      "date": "2026-09-16",
+      "scope": "The Known gaps callout: the claim that the linked gaps list (gap-handoff.html) is current at this commit."
+    },
+    {
+      "id": "S-02",
+      "page": "index.html",
+      "location": "Operations (Day-two runbook) route, footer of the \"Upgrade\" section",
+      "text": "verified 2026-09-19 against nullvalues/forqsite@7089b9dc",
+      "commit": "7089b9dc",
+      "date": "2026-09-19",
+      "scope": "Section footer: the \"Upgrade\" section, back to its h2 heading. Reading taken: the callout above that heading (a pointer to the Backup & recovery route) is navigation, not a claim, and is not covered."
+    },
+    {
+      "id": "S-03",
+      "page": "index.html",
+      "location": "Operations (Day-two runbook) route, footer of the \"Provider packs (condensed)\" section",
+      "text": "verified 2026-09-18 against nullvalues/forqsite@7089b9dc",
+      "commit": "7089b9dc",
+      "date": "2026-09-18",
+      "scope": "Section footer: the \"Provider packs (condensed)\" section, back to its h2 heading (the previous stamp closes the Upgrade section)."
+    },
+    {
+      "id": "S-04",
+      "page": "index.html",
+      "location": "Promoting a change route, footer of the page (after \"Which collapses are safe\")",
+      "text": "verified 2026-09-21 against nullvalues/forqsite@7089b9dc",
+      "commit": "7089b9dc",
+      "date": "2026-09-21",
+      "scope": "Reading taken: a page footer covering the whole Promoting a change route, not only its last h2 section. It is the only stamp on that route, it sits after the closing paragraph with extra spacing, and the page is one argument whose forqsite facts sit in its earlier sections. Advice to the operator (which environments to collapse) is not a forqsite claim and is not listed."
+    },
+    {
+      "id": "S-05",
+      "page": "gap-handoff.html",
+      "location": "Intro, third paragraph (the ordering assumption), inline",
+      "text": "Verified 2026-09-16 against <span style=\"font-family:'Geist Mono',monospace; font-size:13px;\">nullvalues/forqsite@17b78645</span>",
+      "commit": "17b78645",
+      "date": "2026-09-16",
+      "scope": "Inline stamp: its own paragraph, the ordering assumption that production stays non-docker. Reading taken: it does not extend to the TL;DR ordering below it or to the GAP entries, which the footer stamp covers."
+    },
+    {
+      "id": "S-06",
+      "page": "gap-handoff.html",
+      "location": "GAP-012 entry, last row of the EVIDENCE table",
+      "text": "['nullvalues/forqsite@7089b9dc', 'every line above checked at this commit on 2026-09-19']",
+      "commit": "7089b9dc",
+      "date": "2026-09-19",
+      "scope": "Table-row stamp: the five GAP-012 evidence rows above it. The GAP-012 entry as a whole (its problem statement) is a GAP entry and is covered by the footer stamp."
+    },
+    {
+      "id": "S-07",
+      "page": "gap-handoff.html",
+      "location": "Page footer, below the last GAP entry",
+      "text": "forqsite known gaps · verified against nullvalues/forqsite@17b78645 · 16 september 2026",
+      "commit": "17b78645",
+      "date": "2026-09-16",
+      "scope": "Page footer: every GAP entry (GAP-003 to GAP-010, including GAP-012), one claim per entry for its problem statement and evidence rows, except the GAP-012 evidence rows, which carry their own table-row stamp."
+    }
+  ],
+  "claims": [
+    {
+      "id": "C-001",
+      "page": "index.html",
+      "location": "Sidebar, \"Known gaps →\" callout",
+      "claim": "The linked known-gaps list (gap-handoff.html) is current at this commit.",
+      "quote": "Known gaps →",
+      "evidence": [
+        {
+          "path": "docs/operator-runbook.md",
+          "symbol": "pm2 restart forqsite   # or your process manager"
+        },
+        {
+          "path": "package.json",
+          "symbol": "\"scheduler\": \"tsx scripts/scheduler.ts\","
+        },
+        {
+          "path": "scripts/dev.sh",
+          "symbol": "pnpm exec dotenv -e .env.local -- tsx scripts/scheduler.ts"
+        },
+        {
+          "path": "docker-compose.yml",
+          "symbol": "build: ."
+        },
+        {
+          "path": "docker-compose.yml",
+          "symbol": "image: postgres:16-alpine"
+        },
+        {
+          "path": "docs/deployment/docker-compose.rolling.yml",
+          "symbol": "build: ."
+        },
+        {
+          "path": "scripts/rolling-restart.sh",
+          "symbol": "COMPOSE=\"docker compose -f docker-compose.rolling.yml\""
+        },
+        {
+          "path": "docs/deployment/Caddyfile.example",
+          "symbol": "reverse_proxy * forqsite_a:3000 forqsite_b:3000 {"
+        },
+        {
+          "path": "docs/deployment/Caddyfile.example",
+          "symbol": "*.forqsite.ai, forqsite.ai, *.forqsite.com, forqsite.com {"
+        },
+        {
+          "path": "package.json",
+          "symbol": "\"dev\": \"next dev -p 6020\","
+        },
+        {
+          "path": "package.json",
+          "symbol": "\"start\": \"dotenv -e .env.local -- next start -H 0.0.0.0 -p 6020\","
+        },
+        {
+          "path": "docs/first-run.md",
+          "symbol": "APP_URL=http://admin.forqsite.test:3000"
+        },
+        {
+          "path": "docs/first-run.md",
+          "symbol": "curl http://localhost:3000/api/health"
+        },
+        {
+          "path": "docs/operator-runbook.md",
+          "symbol": "The application listens on port 3000 by default."
+        },
+        {
+          "path": "docs/deployment/docker-compose.rolling.yml",
+          "symbol": "# Two forqsite instances (forqsite_a on :3000, forqsite_b on :3001) sit behind"
+        },
+        {
+          "path": "scripts/rolling-restart.sh",
+          "symbol": "until ! curl -sf http://localhost:3000/api/health > /dev/null 2>&1; do"
+        },
+        {
+          "path": "scripts/firstrun.sh",
+          "symbol": "val=$(grep \"^${var}=\" .env.local 2>/dev/null || true | cut -d= -f2-)"
+        },
+        {
+          "path": "scripts/firstrun.sh",
+          "symbol": "step \"7.5. Required variable check\""
+        },
+        {
+          "path": "scripts/backup.sh",
+          "symbol": "pg_dump \"${DATABASE_URL}\" | gzip > \"$DUMP_FILE\""
+        },
+        {
+          "path": "scripts/backup.sh",
+          "symbol": "mc mirror \"$DEST\" \"$BACKUP_S3_TARGET\""
+        },
+        {
+          "path": "scripts/backup.sh",
+          "symbol": "DEST=\"${BACKUP_DEST_DIR:?BACKUP_DEST_DIR is required}\""
+        },
+        {
+          "path": "docs/operator-runbook.md",
+          "symbol": "4. Log in, render a tenant's pages, verify theme and AAAC context survive."
+        },
+        {
+          "path": "scripts/restore.sh",
+          "symbol": "if [ -z \"${AI_CREDENTIAL_ENCRYPTION_KEY:-}\" ]; then"
+        },
+        {
+          "path": "src/lib/config.ts",
+          "symbol": "credentialsEncryptionKey: { env: 'FORQSITE_CREDENTIALS_ENCRYPTION_KEY',"
+        },
+        {
+          "path": "docs/operator-runbook.md",
+          "symbol": "export AI_CREDENTIAL_ENCRYPTION_KEY=$(grep FORQSITE_CREDENTIALS_ENCRYPTION_KEY .env.local | cut -d= -f2-)"
+        },
+        {
+          "path": "docs/configuration.md",
+          "symbol": "The restore script (`scripts/restore.sh`) checks for this variable under the name `AI_CREDENTIAL_ENCRYPTION_KEY`"
+        },
+        {
+          "path": "docs/block-provider-spec.md",
+          "symbol": "**Field key renames are not migrated.** If an upgrade renames a key — say `linkedPage` to"
+        },
+        {
+          "path": "docs/block-provider-spec.md",
+          "symbol": "`render` falls through to its null-or-default path. Nothing rewrites stored data. Renaming a"
+        },
+        {
+          "path": "scripts/backup.sh",
+          "symbol": "set +x  # suppress tracing during password-sensitive commands"
+        },
+        {
+          "path": "scripts/backup.sh",
+          "symbol": "set -x"
+        },
+        {
+          "path": "scripts/restore.sh",
+          "symbol": "set +x"
+        },
+        {
+          "path": "docs/first-run.md",
+          "symbol": "sudo apt-get install -y postgresql-18-pgvector"
+        },
+        {
+          "path": "docs/operator-runbook.md",
+          "symbol": "`apt install postgresql-15-pgvector` on Debian/Ubuntu)."
+        },
+        {
+          "path": "docs/operator-runbook.md",
+          "symbol": "SMTP_HOST"
+        },
+        {
+          "path": "docs/operator-runbook.md",
+          "symbol": "DEFAULT_ORG_FEATURES"
+        },
+        {
+          "path": "src/lib/config.ts",
+          "symbol": "env: 'DEFAULT_ORG_FEATURES',"
+        },
+        {
+          "path": "src/lib/config.ts",
+          "symbol": "env: 'TRUSTED_PUBLISHERS',"
+        },
+        {
+          "path": "src/lib/config.ts",
+          "symbol": "env: 'REQUIRE_PACK_SIGNATURES',"
+        },
+        {
+          "path": "scripts/firstrun.sh",
+          "symbol": "pnpm db:bootstrap       — create the first platform admin (save the credentials)"
+        },
+        {
+          "path": "package.json",
+          "symbol": "\"db:seed-platform\": \"dotenv -e .env.local -- tsx src/db/seed-platform.ts\","
+        }
+      ],
+      "stamp": "S-01",
+      "note": "Evidence is the deduplicated union of the evidence of every claim whose stamp is S-07, the gap-handoff.html footer stamp; the callout asserts that list is current."
+    },
+    {
+      "id": "C-002",
+      "page": "index.html",
+      "location": "Operations route, \"Upgrade\" section, paragraph after \"EVERY MIGRATION MUST BE READABLE BY THE PREVIOUS VERSION\"",
+      "claim": "Migrations are numbered SQL files applied in journal order by pnpm db:migrate (drizzle-kit migrate), with no down step: 95 forward .sql files under src/db/migrations, ordered by meta/_journal.json, no down file, and no rollback script in package.json.",
+      "quote": "there is no down step: 95 forward",
+      "evidence": [
+        {
+          "path": "package.json",
+          "symbol": "\"db:migrate\": \"dotenv -e .env.local -- drizzle-kit migrate\","
+        },
+        {
+          "path": "src/db/migrations/meta/_journal.json",
+          "symbol": "\"tag\": \"0099_retire_backup_corr048_paragraph_content\","
+        }
+      ],
+      "stamp": "S-02",
+      "note": "MISMATCH: page says there are 95 forward .sql files under src/db/migrations; at the release commit that directory holds 100 .sql files (journal tags run to 0099_retire_backup_corr048_paragraph_content). A file count has no single-line literal, so the cited journal tag is the last entry, not the count."
+    },
+    {
+      "id": "C-003",
+      "page": "index.html",
+      "location": "Operations route, \"Upgrade\" section, paragraph on forqsite's own history",
+      "claim": "The RBAC tables arrived in 0050_rbac_schema_and_seed.sql and the legacy platform_admins, organisation_members and user_roles tables were dropped in a separate migration, 0051_rbac_drop_legacy_tables.sql.",
+      "quote": "own history carries the pair",
+      "evidence": [
+        {
+          "path": "src/db/migrations/meta/_journal.json",
+          "symbol": "\"tag\": \"0050_rbac_schema_and_seed\","
+        },
+        {
+          "path": "src/db/migrations/meta/_journal.json",
+          "symbol": "\"tag\": \"0051_rbac_drop_legacy_tables\","
+        },
+        {
+          "path": "src/db/migrations/0051_rbac_drop_legacy_tables.sql",
+          "symbol": "DROP TABLE IF EXISTS \"user_roles\" CASCADE;"
+        },
+        {
+          "path": "src/db/migrations/0051_rbac_drop_legacy_tables.sql",
+          "symbol": "DROP TABLE IF EXISTS \"organisation_members\" CASCADE;"
+        },
+        {
+          "path": "src/db/migrations/0051_rbac_drop_legacy_tables.sql",
+          "symbol": "DROP TABLE IF EXISTS \"platform_admins\" CASCADE;"
+        }
+      ],
+      "stamp": "S-02"
+    },
+    {
+      "id": "C-004",
+      "page": "index.html",
+      "location": "Operations route, \"Upgrade\" section, under \"A MISSED MIGRATION DOES NOT STOP A START\"",
+      "claim": "prestart runs a migration check that prints a [WARN] line and always exits 0, and it compares only tables that migrations create, so a missed column-adding migration passes silently; the line to look for is check-migrations in the process log.",
+      "quote": "runs a migration check that prints a",
+      "evidence": [
+        {
+          "path": "package.json",
+          "symbol": "\"prestart\": \"dotenv -e .env.local -- tsx scripts/check-migrations.ts;"
+        },
+        {
+          "path": "scripts/check-migrations.ts",
+          "symbol": "// Always exit 0: missing tables produce a WARN but must not block startup."
+        },
+        {
+          "path": "scripts/check-migrations.ts",
+          "symbol": "const matches = content.matchAll(/CREATE TABLE(?:\\s+IF NOT EXISTS)?\\s+\"?(\\w+)\"?/gi)"
+        },
+        {
+          "path": "scripts/check-migrations.ts",
+          "symbol": "[WARN] check-migrations:"
+        }
+      ],
+      "stamp": "S-02"
+    },
+    {
+      "id": "C-005",
+      "page": "index.html",
+      "location": "Operations route, \"Provider packs (condensed)\" section, \"Block configuration.\" paragraph",
+      "claim": "Block settings are a jsonb column on the block row; on every save the platform strips undeclared keys and parses the rest against the block type's dataSchema, and a block that does not parse rejects the whole save with an invalid-data error before anything is written.",
+      "quote": "A block whose data does not parse rejects",
+      "evidence": [
+        {
+          "path": "src/db/schema/content.ts",
+          "symbol": "data: jsonb('data').notNull().default(sql`'{}'::jsonb`),"
+        },
+        {
+          "path": "src/services/block-registry/index.ts",
+          "symbol": "const parsed = definition.dataSchema.parse(strippedData ?? {})"
+        },
+        {
+          "path": "src/services/block-registry/index.ts",
+          "symbol": "return { ok: false, error: 'invalid_data', detail }"
+        },
+        {
+          "path": "src/services/block-registry/index.ts",
+          "symbol": " * A parse failure rejects the whole save with `invalid_data` — never a per-block"
+        }
+      ],
+      "stamp": "S-03"
+    },
+    {
+      "id": "C-006",
+      "page": "index.html",
+      "location": "Operations route, \"Provider packs (condensed)\" section, \"A scoped key-value store.\" paragraph",
+      "claim": "The platform-owned provider_storage table gives each pack a namespace keyed (organisation_id, provider_id, tenant_id, key) with a jsonb value capped at 64 KB; the platform fills in the provider id, and organisation-scoped rows carry an empty tenant value.",
+      "quote": "The platform owns a table called",
+      "evidence": [
+        {
+          "path": "src/db/schema/provider-storage.ts",
+          "symbol": "pk: primaryKey({ columns: [t.organisationId, t.providerId, t.tenantId, t.key] }),"
+        },
+        {
+          "path": "src/db/schema/provider-storage.ts",
+          "symbol": "value: jsonb('value').notNull(),"
+        },
+        {
+          "path": "src/db/schema/provider-storage.ts",
+          "symbol": "//   Empty string ('') in tenant_id is the sentinel for org-scoped/admin storage."
+        },
+        {
+          "path": "src/services/provider-storage.ts",
+          "symbol": "const MAX_VALUE_BYTES = 64 * 1024 // 64 KB"
+        },
+        {
+          "path": "src/services/block-registry/handle.ts",
+          "symbol": "return storageGet(ctx.organisationId, ctx.providerId, ctx.tenantId, key)"
+        }
+      ],
+      "stamp": "S-03"
+    },
+    {
+      "id": "C-007",
+      "page": "index.html",
+      "location": "Operations route, \"Provider packs (condensed)\" section, callout \"One place that namespace does not hold.\"",
+      "claim": "Storage and log calls made from a third-party pack's aaac.generate are attributed to the built-in core provider and land in the wrong namespace, and forqsite discloses this in its provider specification.",
+      "quote": "One place that namespace does not hold.",
+      "evidence": [
+        {
+          "path": "docs/block-provider-spec.md",
+          "symbol": "**A third-party generation handle currently attributes its storage and its logs to the"
+        },
+        {
+          "path": "docs/block-provider-spec.md",
+          "symbol": "made from your `aaac.generate` land in the wrong namespace. This is a real cross-provider"
+        }
+      ],
+      "stamp": "S-03"
+    },
+    {
+      "id": "C-008",
+      "page": "index.html",
+      "location": "Operations route, \"Provider packs (condensed)\" section, under \"THE CEILING\"",
+      "claim": "forqsite's provider contract forbids direct database access, and the handle a pack is given carries storage, ai, signals, media, log, getTheme and content reads, with no database route.",
+      "quote": "No direct database access",
+      "evidence": [
+        {
+          "path": "docs/block-provider-spec.md",
+          "symbol": "- **No direct database access.** Do not import the platform's data layer or any schema from"
+        },
+        {
+          "path": "docs/block-provider-spec.md",
+          "symbol": "it. Providers are pure compute over the data and handle they are given."
+        },
+        {
+          "path": "src/services/block-registry/handle.ts",
+          "symbol": "async getTheme(): Promise<Required<ThemeConfig>> {"
+        },
+        {
+          "path": "src/services/block-registry/handle.ts",
+          "symbol": "log(level: 'info' | 'warn' | 'error', message: string, data?: Record<string, unknown>): void {"
+        }
+      ],
+      "stamp": "S-03"
+    },
+    {
+      "id": "C-009",
+      "page": "index.html",
+      "location": "Operations route, \"Provider packs (condensed)\" section, paragraph after \"THE CEILING\"",
+      "claim": "Every forqsite table, including the pack-facing provider_storage table, lives in the numbered migrations applied by pnpm db:migrate.",
+      "quote": "including the pack-facing",
+      "evidence": [
+        {
+          "path": "src/db/migrations/0030_14_6_provider_storage.sql",
+          "symbol": "CREATE TABLE provider_storage ("
+        }
+      ],
+      "stamp": "S-03"
+    },
+    {
+      "id": "C-010",
+      "page": "index.html",
+      "location": "Operations route, \"Provider packs (condensed)\" section, under \"WHY INSTALL, MANIFEST ENTRY, BUILD, RESTART\", the build paragraph",
+      "claim": "A pack's client components are compiled in as literal import() specifiers generated from the provider manifest at prebuild, the same prebuild that derives the server registry and the transpile list from that manifest.",
+      "quote": "generated from the provider manifest at prebuild",
+      "evidence": [
+        {
+          "path": "package.json",
+          "symbol": "\"prebuild\": \"pnpm build:sdk && dotenv -e .env.local -- tsx scripts/generate-client-registry.ts\","
+        },
+        {
+          "path": "scripts/generate-client-registry.ts",
+          "symbol": " * a literal `import('<path>')` expression — statically analysable by webpack/Next.js."
+        },
+        {
+          "path": "next.config.mjs",
+          "symbol": "transpilePackages: deriveTranspilePackages(readManifestModules(providerManifestPath)),"
+        }
+      ],
+      "stamp": "S-03"
+    },
+    {
+      "id": "C-011",
+      "page": "index.html",
+      "location": "Operations route, \"Provider packs (condensed)\" section, the restart paragraph",
+      "claim": "The loaded provider list is memoised for the life of the process, so a running instance never re-reads the manifest.",
+      "quote": "The loaded provider list is memoised",
+      "evidence": [
+        {
+          "path": "src/services/block-registry/loader.ts",
+          "symbol": " * validated provider list. The result is memoised for the process lifetime."
+        }
+      ],
+      "stamp": "S-03"
+    },
+    {
+      "id": "C-012",
+      "page": "index.html",
+      "location": "Operations route, \"Provider packs (condensed)\" section, install steps 3 and 5",
+      "claim": "The manifest entry is added at /platform-admin/block-providers/install with an id, a module and a tier, \"licensed\" for third-party; every pack loads private, and a private pack cannot be enabled for an organisation.",
+      "quote": "a private pack cannot be enabled",
+      "evidence": [
+        {
+          "path": "src/app/platform-admin/block-providers/install/AddProviderForm.tsx",
+          "symbol": "const [tier, setTier] = useState<'core' | 'licensed'>('licensed')"
+        },
+        {
+          "path": "src/services/licensing.ts",
+          "symbol": "const visibility = providerRows[0]?.visibility ?? 'private'"
+        },
+        {
+          "path": "src/services/licensing.ts",
+          "symbol": "if (visibility === 'private') {"
+        }
+      ],
+      "stamp": "S-03"
+    },
+    {
+      "id": "C-013",
+      "page": "index.html",
+      "location": "Operations route, \"Provider packs (condensed)\" section, callout under the install steps",
+      "claim": "Signature enforcement is off by default; TRUSTED_PUBLISHERS and REQUIRE_PACK_SIGNATURES=true require ed25519 signatures at boot, and FORQSITE_REVOKED_SIGNATURES revokes a key without a deploy.",
+      "quote": "Signature enforcement exists but is",
+      "evidence": [
+        {
+          "path": "src/lib/config.ts",
+          "symbol": "env: 'TRUSTED_PUBLISHERS',"
+        },
+        {
+          "path": "src/lib/config.ts",
+          "symbol": "requirePackSignatures:    { env: 'REQUIRE_PACK_SIGNATURES',              required: false, default: 'false' }"
+        },
+        {
+          "path": "src/lib/config.ts",
+          "symbol": " * Example: forqsite:ed25519:<base64>,acme-partner:ed25519:<base64>"
+        },
+        {
+          "path": "src/lib/config.ts",
+          "symbol": "env: 'FORQSITE_REVOKED_SIGNATURES',"
+        }
+      ],
+      "stamp": "S-03"
+    },
+    {
+      "id": "C-014",
+      "page": "index.html",
+      "location": "Operations route, \"Provider packs (condensed)\" section, under \"WHEN THE BUILD DID NOT INCLUDE THE PACK\"",
+      "claim": "A declared pack whose client component is missing from the generated registry is rejected on its own while every other provider keeps serving, and /api/health checks only the database and object storage, never the provider registry.",
+      "quote": "never consults the provider registry",
+      "evidence": [
+        {
+          "path": "src/services/block-registry/loader.ts",
+          "symbol": "clientComponent.importPath not present in the generated client registry"
+        },
+        {
+          "path": "src/services/block-registry/loader.ts",
+          "symbol": "Every other provider in this load continues to serve."
+        },
+        {
+          "path": "src/app/api/health/route.ts",
+          "symbol": "import { isDatabaseHealthy } from '@/services/health'"
+        },
+        {
+          "path": "src/app/api/health/route.ts",
+          "symbol": "await client.bucketExists(bucket)"
+        }
+      ],
+      "stamp": "S-03"
+    },
+    {
+      "id": "C-015",
+      "page": "index.html",
+      "location": "Operations route, \"Provider packs (condensed)\" section, paragraph after the rejection case",
+      "claim": "The only signal of that rejection is one [block-registry] line in the process log; the platform-admin block-providers page surfaces namespace and predicate rejections, not this class.",
+      "quote": "The only signal is a single line in the process log",
+      "evidence": [
+        {
+          "path": "src/services/block-registry/loader.ts",
+          "symbol": "`[block-registry] Provider \"${provider.id}\" rejected: block type(s) declare a ` +"
+        },
+        {
+          "path": "src/services/block-registry/loader.ts",
+          "symbol": "export function getLastClientRegistryRejections(): ClientRegistryRejection[] {"
+        },
+        {
+          "path": "src/app/platform-admin/block-providers/page.tsx",
+          "symbol": "const rejections = getLastLoadRejections()"
+        }
+      ],
+      "stamp": "S-03"
+    },
+    {
+      "id": "C-016",
+      "page": "index.html",
+      "location": "Operations route, \"Provider packs (condensed)\" section, last paragraph",
+      "claim": "If the manifest names a module the build never registered server-side, the whole load aborts with an error naming the module and telling you to run pnpm generate:registries.",
+      "quote": "it aborts entirely",
+      "evidence": [
+        {
+          "path": "src/services/block-registry/loader.ts",
+          "symbol": "`Provider '${entry.module}' is not registered in server-provider-registry.ts. ` +"
+        },
+        {
+          "path": "src/services/block-registry/loader.ts",
+          "symbol": "pnpm generate:registries"
+        }
+      ],
+      "stamp": "S-03"
+    },
+    {
+      "id": "C-017",
+      "page": "index.html",
+      "location": "Promoting a change route, opening \"built once\" paragraph",
+      "claim": "A build is pinned by a commit, a frozen lockfile and one provider manifest, config/providers.json.",
+      "quote": "Built once means built from one pinned set of inputs",
+      "evidence": [
+        {
+          "path": "next.config.mjs",
+          "symbol": "process.env.PROVIDER_MANIFEST_PATH ?? path.resolve(process.cwd(), 'config/providers.json')"
+        }
+      ],
+      "stamp": "S-04",
+      "note": "config/providers.json is not committed in the forqsite repository (config/providers.example.json is); the cited literal is where the build resolves the manifest path."
+    },
+    {
+      "id": "C-018",
+      "page": "index.html",
+      "location": "Promoting a change route, \"The three streams\" table, Schema row",
+      "claim": "Schema changes are numbered SQL applied by pnpm db:migrate, with no down step.",
+      "quote": "Numbered SQL, applied to the database by",
+      "evidence": [
+        {
+          "path": "package.json",
+          "symbol": "\"db:migrate\": \"dotenv -e .env.local -- drizzle-kit migrate\","
+        }
+      ],
+      "stamp": "S-04"
+    },
+    {
+      "id": "C-019",
+      "page": "index.html",
+      "location": "Promoting a change route, \"The three streams\" table, Content row",
+      "claim": "Nothing in forqsite rewrites stored block data to match a pack upgrade; the reshape is hand-written SQL and no error is raised if it is never written.",
+      "quote": "Nothing rewrites stored block data for you.",
+      "evidence": [
+        {
+          "path": "docs/block-provider-spec.md",
+          "symbol": "`render` falls through to its null-or-default path. Nothing rewrites stored data. Renaming a"
+        }
+      ],
+      "stamp": "S-04"
+    },
+    {
+      "id": "C-020",
+      "page": "index.html",
+      "location": "Promoting a change route, \"The path a pack takes\" diagram, top lane",
+      "claim": "A reviewed pack is published as an object at packs.forqsite.dev.",
+      "quote": "packs.forqsite.dev</text>",
+      "evidence": [
+        {
+          "path": ".npmrc",
+          "symbol": "@forqsite-packs:registry=https://packs.forqsite.dev/packs/"
+        }
+      ],
+      "stamp": "S-04"
+    },
+    {
+      "id": "C-021",
+      "page": "index.html",
+      "location": "Promoting a change route, paragraph under the diagram",
+      "claim": "Core packs are already part of the workspace, so they enter at the build lane already declared.",
+      "quote": "Core packs are already part of the workspace",
+      "evidence": [
+        {
+          "path": "pnpm-workspace.yaml",
+          "symbol": "  - src/block-providers/core"
+        }
+      ],
+      "stamp": "S-04"
+    },
+    {
+      "id": "C-022",
+      "page": "gap-handoff.html",
+      "location": "Intro, third paragraph",
+      "claim": "The gap ordering assumes production stays non-docker, with network Postgres and MinIO and compose as a development convenience.",
+      "quote": "Ordering assumes production stays non-docker",
+      "evidence": [
+        {
+          "path": "docs/first-run.md",
+          "symbol": "| PostgreSQL | 15+ | Remote instance; pgvector must be installed |"
+        },
+        {
+          "path": "docs/first-run.md",
+          "symbol": "| MinIO | any | Remote S3-compatible instance; bucket must already exist |"
+        }
+      ],
+      "stamp": "S-05",
+      "note": "The non-docker production premise is this page's own ordering assumption; no file in the forqsite repository designates production as non-docker. The cited literals are the first-run prerequisites that treat Postgres and MinIO as remote instances."
+    },
+    {
+      "id": "C-023",
+      "page": "gap-handoff.html",
+      "location": "GAP-003 entry, problem and evidence",
+      "claim": "The repository ships no process supervision artifacts: the runbook references pm2, which nothing installs, and the scheduler script does not load .env.local except under dev.sh.",
+      "quote": "the repo ships no process supervision artifacts",
+      "evidence": [
+        {
+          "path": "docs/operator-runbook.md",
+          "symbol": "pm2 restart forqsite   # or your process manager"
+        },
+        {
+          "path": "package.json",
+          "symbol": "\"scheduler\": \"tsx scripts/scheduler.ts\","
+        },
+        {
+          "path": "scripts/dev.sh",
+          "symbol": "pnpm exec dotenv -e .env.local -- tsx scripts/scheduler.ts"
+        }
+      ],
+      "stamp": "S-07",
+      "note": "MISMATCH: page says the runbook's §7/§12 reference pm2; the file has one pm2 reference, in §12 (Upgrading forqsite), and none in §7."
+    },
+    {
+      "id": "C-024",
+      "page": "gap-handoff.html",
+      "location": "GAP-004 entry, problem and evidence",
+      "claim": "Both compose files declare build: . with no Dockerfile, rolling-restart.sh points at the rolling compose file by the wrong path, Caddyfile.example targets :3000 with hardcoded hostnames, and the root compose db is plain postgres:16-alpine with no MinIO service.",
+      "quote": "Both compose files declare build: . but no Dockerfile exists.",
+      "evidence": [
+        {
+          "path": "docker-compose.yml",
+          "symbol": "build: ."
+        },
+        {
+          "path": "docker-compose.yml",
+          "symbol": "image: postgres:16-alpine"
+        },
+        {
+          "path": "docs/deployment/docker-compose.rolling.yml",
+          "symbol": "build: ."
+        },
+        {
+          "path": "scripts/rolling-restart.sh",
+          "symbol": "COMPOSE=\"docker compose -f docker-compose.rolling.yml\""
+        },
+        {
+          "path": "docs/deployment/Caddyfile.example",
+          "symbol": "reverse_proxy * forqsite_a:3000 forqsite_b:3000 {"
+        },
+        {
+          "path": "docs/deployment/Caddyfile.example",
+          "symbol": "*.forqsite.ai, forqsite.ai, *.forqsite.com, forqsite.com {"
+        }
+      ],
+      "stamp": "S-07"
+    },
+    {
+      "id": "C-025",
+      "page": "gap-handoff.html",
+      "location": "GAP-005 entry, problem and evidence",
+      "claim": "The app binds port 6020 while first-run.md, the runbook, the rolling compose file, Caddyfile.example and rolling-restart.sh all use 3000.",
+      "quote": "The app binds 6020 (package.json dev/start)",
+      "evidence": [
+        {
+          "path": "package.json",
+          "symbol": "\"dev\": \"next dev -p 6020\","
+        },
+        {
+          "path": "package.json",
+          "symbol": "\"start\": \"dotenv -e .env.local -- next start -H 0.0.0.0 -p 6020\","
+        },
+        {
+          "path": "docs/first-run.md",
+          "symbol": "APP_URL=http://admin.forqsite.test:3000"
+        },
+        {
+          "path": "docs/first-run.md",
+          "symbol": "curl http://localhost:3000/api/health"
+        },
+        {
+          "path": "docs/operator-runbook.md",
+          "symbol": "The application listens on port 3000 by default."
+        },
+        {
+          "path": "docs/deployment/docker-compose.rolling.yml",
+          "symbol": "# Two forqsite instances (forqsite_a on :3000, forqsite_b on :3001) sit behind"
+        },
+        {
+          "path": "docs/deployment/Caddyfile.example",
+          "symbol": "reverse_proxy * forqsite_a:3000 forqsite_b:3000 {"
+        },
+        {
+          "path": "scripts/rolling-restart.sh",
+          "symbol": "until ! curl -sf http://localhost:3000/api/health > /dev/null 2>&1; do"
+        }
+      ],
+      "stamp": "S-07",
+      "note": "MISMATCH: page quotes the Caddyfile.example line as reverse_proxy forqsite_a:3000 forqsite_b:3000; the file has reverse_proxy * forqsite_a:3000 forqsite_b:3000 {"
+    },
+    {
+      "id": "C-026",
+      "page": "gap-handoff.html",
+      "location": "GAP-006 entry, problem and evidence",
+      "claim": "In firstrun.sh step 7.5 the required-variable check pipes cut from true rather than grep, so a key present with an empty value is reported as set.",
+      "quote": "pipes cut from true, not from grep",
+      "evidence": [
+        {
+          "path": "scripts/firstrun.sh",
+          "symbol": "val=$(grep \"^${var}=\" .env.local 2>/dev/null || true | cut -d= -f2-)"
+        },
+        {
+          "path": "scripts/firstrun.sh",
+          "symbol": "step \"7.5. Required variable check\""
+        }
+      ],
+      "stamp": "S-07"
+    },
+    {
+      "id": "C-027",
+      "page": "gap-handoff.html",
+      "location": "GAP-007 entry, problem and evidence",
+      "claim": "backup.sh dumps Postgres only and BACKUP_S3_TARGET mirrors the dump directory, not the media bucket, and the backup drill checks database content, not media rendering.",
+      "quote": "backup.sh dumps Postgres only.",
+      "evidence": [
+        {
+          "path": "scripts/backup.sh",
+          "symbol": "pg_dump \"${DATABASE_URL}\" | gzip > \"$DUMP_FILE\""
+        },
+        {
+          "path": "scripts/backup.sh",
+          "symbol": "mc mirror \"$DEST\" \"$BACKUP_S3_TARGET\""
+        },
+        {
+          "path": "scripts/backup.sh",
+          "symbol": "DEST=\"${BACKUP_DEST_DIR:?BACKUP_DEST_DIR is required}\""
+        },
+        {
+          "path": "docs/operator-runbook.md",
+          "symbol": "4. Log in, render a tenant's pages, verify theme and AAAC context survive."
+        }
+      ],
+      "stamp": "S-07"
+    },
+    {
+      "id": "C-028",
+      "page": "gap-handoff.html",
+      "location": "GAP-008 entry, problem and evidence",
+      "claim": "restore.sh gates on AI_CREDENTIAL_ENCRYPTION_KEY while the application uses FORQSITE_CREDENTIALS_ENCRYPTION_KEY; the runbook works around it with a grep-and-export, and configuration.md documents the mismatch as a quirk.",
+      "quote": "restore.sh gates on AI_CREDENTIAL_ENCRYPTION_KEY",
+      "evidence": [
+        {
+          "path": "scripts/restore.sh",
+          "symbol": "if [ -z \"${AI_CREDENTIAL_ENCRYPTION_KEY:-}\" ]; then"
+        },
+        {
+          "path": "src/lib/config.ts",
+          "symbol": "credentialsEncryptionKey: { env: 'FORQSITE_CREDENTIALS_ENCRYPTION_KEY',"
+        },
+        {
+          "path": "docs/operator-runbook.md",
+          "symbol": "export AI_CREDENTIAL_ENCRYPTION_KEY=$(grep FORQSITE_CREDENTIALS_ENCRYPTION_KEY .env.local | cut -d= -f2-)"
+        },
+        {
+          "path": "docs/configuration.md",
+          "symbol": "The restore script (`scripts/restore.sh`) checks for this variable under the name `AI_CREDENTIAL_ENCRYPTION_KEY`"
+        }
+      ],
+      "stamp": "S-07"
+    },
+    {
+      "id": "C-029",
+      "page": "gap-handoff.html",
+      "location": "GAP-012 entry, problem",
+      "claim": "A pack upgrade that renames a field key does not rewrite block data already stored, so the page silently shows the default in place of stored content.",
+      "quote": "A pack upgrade that renames a field key does not rewrite block data already stored.",
+      "evidence": [
+        {
+          "path": "docs/block-provider-spec.md",
+          "symbol": "**Field key renames are not migrated.** If an upgrade renames a key — say `linkedPage` to"
+        },
+        {
+          "path": "docs/block-provider-spec.md",
+          "symbol": "`render` falls through to its null-or-default path. Nothing rewrites stored data. Renaming a"
+        }
+      ],
+      "stamp": "S-07"
+    },
+    {
+      "id": "C-030",
+      "page": "gap-handoff.html",
+      "location": "GAP-012 entry, EVIDENCE row docs/block-provider-spec.md:431",
+      "claim": "forqsite's provider specification states that field key renames are not migrated and assigns the rewrite to the operator.",
+      "quote": "states that field key renames are not migrated",
+      "evidence": [
+        {
+          "path": "docs/block-provider-spec.md",
+          "symbol": "**Field key renames are not migrated.** If an upgrade renames a key — say `linkedPage` to"
+        },
+        {
+          "path": "docs/block-provider-spec.md",
+          "symbol": "key is a content migration and is the operator's, planned alongside the upgrade. Renaming a"
+        }
+      ],
+      "stamp": "S-06"
+    },
+    {
+      "id": "C-031",
+      "page": "gap-handoff.html",
+      "location": "GAP-012 entry, EVIDENCE row src/components/editor/BlockEditor.tsx:2013",
+      "claim": "Each editor field reads its value by field key from the stored block data, so a key the stored row lacks renders empty with no notice.",
+      "quote": "each editor field reads data[field.key]",
+      "evidence": [
+        {
+          "path": "src/components/editor/BlockEditor.tsx",
+          "symbol": "value={(data as Record<string, unknown>)[field.key]}"
+        }
+      ],
+      "stamp": "S-06"
+    },
+    {
+      "id": "C-032",
+      "page": "gap-handoff.html",
+      "location": "GAP-012 entry, EVIDENCE row src/block-providers/core/index.ts:151",
+      "claim": "The shipped core render path substitutes a literal default for a missing key.",
+      "quote": "the shipped render path substitutes a literal default for a missing key",
+      "evidence": [
+        {
+          "path": "src/block-providers/core/index.ts",
+          "symbol": "d.label ?? 'Button',"
+        }
+      ],
+      "stamp": "S-06"
+    },
+    {
+      "id": "C-033",
+      "page": "gap-handoff.html",
+      "location": "GAP-012 entry, EVIDENCE row src/services/block-registry/index.ts:329-370",
+      "claim": "The save path's only validation accepts an absent optional key, and dataSchema.parse strips the leftover old key, so the next save deletes the old value.",
+      "quote": "the only validation on the save path",
+      "evidence": [
+        {
+          "path": "src/services/block-registry/index.ts",
+          "symbol": "export async function validateBlockDataAgainstRegistry("
+        },
+        {
+          "path": "src/services/block-registry/index.ts",
+          "symbol": "const parsed = definition.dataSchema.parse(strippedData ?? {})"
+        }
+      ],
+      "stamp": "S-06"
+    },
+    {
+      "id": "C-034",
+      "page": "gap-handoff.html",
+      "location": "GAP-012 entry, EVIDENCE row src/db/migrations/0091_reshape_paragraph_content_docs.sql",
+      "claim": "Where a stored-data rewrite has been needed it was done by hand as platform SQL, and package.json has no script for it: db:migrate is drizzle SQL, migrate:export and migrate:import are tenant transfer.",
+      "quote": "where a rewrite has been needed it was done by hand as platform SQL",
+      "evidence": [
+        {
+          "path": "src/db/migrations/0091_reshape_paragraph_content_docs.sql",
+          "symbol": "-- Story CORR-048: reshape array-form `paragraph` block content into"
+        },
+        {
+          "path": "src/db/migrations/0091_reshape_paragraph_content_docs.sql",
+          "symbol": "UPDATE blocks"
+        },
+        {
+          "path": "package.json",
+          "symbol": "\"db:migrate\": \"dotenv -e .env.local -- drizzle-kit migrate\","
+        },
+        {
+          "path": "package.json",
+          "symbol": "\"migrate:export\": \"dotenv -e .env.local -- tsx scripts/migrate-export.ts\","
+        },
+        {
+          "path": "package.json",
+          "symbol": "\"migrate:import\": \"dotenv -e .env.local -- tsx scripts/migrate-import.ts\","
+        }
+      ],
+      "stamp": "S-06"
+    },
+    {
+      "id": "C-035",
+      "page": "gap-handoff.html",
+      "location": "GAP-009 entry, problem and evidence",
+      "claim": "Both backup and restore scripts run set +x around credential-bearing commands and then set -x, turning tracing on for the rest of the script.",
+      "quote": "Both scripts run set +x around credential-bearing commands, then set -x",
+      "evidence": [
+        {
+          "path": "scripts/backup.sh",
+          "symbol": "set +x  # suppress tracing during password-sensitive commands"
+        },
+        {
+          "path": "scripts/backup.sh",
+          "symbol": "set -x"
+        },
+        {
+          "path": "scripts/restore.sh",
+          "symbol": "set +x"
+        }
+      ],
+      "stamp": "S-07",
+      "note": "MISMATCH: page says both scripts re-enable tracing with set -x; scripts/restore.sh has set +x (x3) and no set -x. scripts/backup.sh has set +x before pg_dump and set -x after it, as the page says."
+    },
+    {
+      "id": "C-036",
+      "page": "gap-handoff.html",
+      "location": "GAP-010 entry, problem and evidence",
+      "claim": "first-run.md installs postgresql-18-pgvector while the runbook says postgresql-15-pgvector, and configuration.md has no entry for live keys DEFAULT_ORG_FEATURES, TRUSTED_PUBLISHERS or REQUIRE_PACK_SIGNATURES; firstrun.sh prints pnpm db:bootstrap for the first-admin step.",
+      "quote": "first-run.md installs postgresql-18-pgvector while the runbook says postgresql-15-pgvector",
+      "evidence": [
+        {
+          "path": "docs/first-run.md",
+          "symbol": "sudo apt-get install -y postgresql-18-pgvector"
+        },
+        {
+          "path": "docs/operator-runbook.md",
+          "symbol": "`apt install postgresql-15-pgvector` on Debian/Ubuntu)."
+        },
+        {
+          "path": "docs/operator-runbook.md",
+          "symbol": "SMTP_HOST"
+        },
+        {
+          "path": "docs/operator-runbook.md",
+          "symbol": "DEFAULT_ORG_FEATURES"
+        },
+        {
+          "path": "src/lib/config.ts",
+          "symbol": "env: 'DEFAULT_ORG_FEATURES',"
+        },
+        {
+          "path": "src/lib/config.ts",
+          "symbol": "env: 'TRUSTED_PUBLISHERS',"
+        },
+        {
+          "path": "src/lib/config.ts",
+          "symbol": "env: 'REQUIRE_PACK_SIGNATURES',"
+        },
+        {
+          "path": "scripts/firstrun.sh",
+          "symbol": "pnpm db:bootstrap       — create the first platform admin (save the credentials)"
+        },
+        {
+          "path": "package.json",
+          "symbol": "\"db:seed-platform\": \"dotenv -e .env.local -- tsx src/db/seed-platform.ts\","
+        }
+      ],
+      "stamp": "S-07",
+      "note": "MISMATCH: page quotes first-run.md as apt-get install postgresql-18-pgvector; the file has sudo apt-get install -y postgresql-18-pgvector. The absence of the three keys from docs/configuration.md has no literal to cite; the src/lib/config.ts entries show they are live keys."
+    }
+  ]
+}

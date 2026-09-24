@@ -63,6 +63,8 @@ forqsite.help/
 ├── nginx.conf          # listens on :6000 (matches caddy's port-registry.md assignment)
 ├── scripts/
 │   └── bundle-template.py  # canonical bundle-edit tool (extract|inject|verify) — see Editing procedure below
+├── docs/
+│   └── claims-manifest.json  # every stamped claim both pages make about forqsite, and where its evidence lives
 └── README.md
 ```
 
@@ -111,6 +113,11 @@ script, and — where the change is interactive/CSS behavior — a headless-brow
 (e.g. Chromium `--dump-dom`), because a text diff can't confirm runtime behavior like
 scroll reset or hash routing. The JSON round-trip check is now performed by `verify`
 itself.
+
+**Claims manifest.** `docs/claims-manifest.json` lists every forqsite stamp in both pages,
+every claim each stamp covers, and where in the forqsite repository each claim's evidence
+lives, against one pinned release commit. The stories that re-verify or restamp a claim
+update it in the same change.
 
 **Deploy, drift-check and provenance scripts** (INFRA-006, INFRA-007, INFRA-008, Phase 11).
 Three scripts, each documented in full in its own header comment — this section points at
