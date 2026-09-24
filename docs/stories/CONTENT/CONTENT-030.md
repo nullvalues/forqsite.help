@@ -44,6 +44,24 @@ contains a host path. `index.html` and `gap-handoff.html` are byte-identical to 
 Forbidden proxy: stamp counts or claims taken by grepping the bundles rather than the
 `extract` output, and claim text that paraphrases a page claim with no `quote` behind it.
 
+Every evidence `symbol` is a single-line literal that is a substring of
+`git show <release.commit>:<path>` in the forqsite clone. Signal: the Tests script's
+`git show` check. Forbidden proxy: a symbol that paraphrases the code, names a line number,
+or says "same pattern as" another entry, or one checked against a stamp's older commit
+instead of `release.commit`. Where the page's implied literal is absent at the release
+commit, the claim cites what the file does contain and carries a `note` that starts with
+`MISMATCH:`.
+
+The `index.html` Known-gaps claim's `evidence` equals, as a set with no duplicates, the
+union of the evidence of every claim whose `stamp` is the `gap-handoff.html` footer stamp,
+and its `note` names that stamp id. Signal: the Tests script recomputes the union. Forbidden
+proxy: a hand-picked subset, or a note that points at claim IDs instead of copying the
+evidence.
+
+No `note` in the manifest references a claim ID (matches `C-<digits>`). Signal: the Tests
+script's regex over every note. Forbidden proxy: notes that stay correct only while claim
+IDs do not change.
+
 ## Instructions
 
 1. **Extract, don't grep.** Run `python3 scripts/bundle-template.py extract <page> <scratch>`
@@ -78,16 +96,33 @@ Forbidden proxy: stamp counts or claims taken by grepping the bundles rather tha
    A table-row stamp, such as the `checked at this commit` row in `gap-handoff.html`, covers
    the rows above it in that table. The `gap-handoff.html` footer stamp covers every GAP
    entry. The `index.html` sidebar stamp under "Known gaps →" is the Known gaps callout. Give
-   it one claim, "the linked gaps list is current at this commit", and let that claim's
-   evidence be the union of the GAP claims' evidence. When a stamp's reach is ambiguous, say
-   which reading you took in its `scope` field.
-5. **Evidence.** Where the page already cites a path, use it. Otherwise find the evidence
-   in the forqsite clone at the stamp's own commit (`git -C <clone> grep` /
-   `git show <sha>:<path>`). Record a repo-relative path plus a symbol or behaviour, and no
-   line numbers, because line numbers drift. This is locating evidence, not re-verifying
-   the claim. Whether the claim still holds at the release commit is for CONTENT-031 and
-   CONTENT-032 to decide. If a claim has no findable evidence, keep it, use `"evidence": []`,
-   and add a `"note"` saying why.
+   it one claim, "the linked gaps list is current at this commit". Its `evidence` is a
+   deduplicated copy of every evidence entry of every claim whose `stamp` is the
+   gap-handoff footer stamp. Copy the entries, don't refer to them. Its `note` names that
+   footer stamp's id (for example `S-07`), and it is the only `index.html` claim whose note
+   names a `gap-handoff.html` stamp id. When a stamp's reach is ambiguous, say which reading
+   you took in its `scope` field.
+
+   No `note` anywhere in the manifest may reference a claim ID. Assign claim IDs last, once
+   the list is final: `C-001` upward in page order, `index.html` first, then
+   `gap-handoff.html`, top to bottom within each page.
+5. **Evidence.** Locate and check evidence against `release.commit`, the one commit the
+   manifest pins, never against a stamp's older sha. Where the page already cites a path,
+   use it. Each `symbol` must be a single-line verbatim literal for which
+   `git -C <clone> grep -F -n -e '<literal>' <release.commit> -- <path>` returns at least one
+   hit. Paraphrases, line numbers and "same pattern as X" are forbidden. This is locating
+   evidence, not re-verifying the claim: whether the claim still holds is for CONTENT-031
+   and CONTENT-032 to decide.
+
+   When the literal the page implies is absent from the file at the release commit, cite
+   the literal that is there, and add a `note` that starts with `MISMATCH:` and states
+   plainly what the page says and what the file contains. That records the difference for
+   CONTENT-031/032. Do not change the page. Worked example at `1fda3228`: the page says the
+   restore script turns tracing back on with `set -x`, but the file contains `set +x` three
+   times and no `set -x`. Cite `set +x` and write
+   `MISMATCH: page says tracing is re-enabled with set -x; file has set +x (x3) and no set -x`.
+   If a claim has no findable evidence, keep it, use `"evidence": []`, and add a `"note"`
+   saying why.
 6. **Claims and quotes.** List only claims the pages make. Don't split one sentence into
    several claims, and don't list unstamped content. Each `quote` must be long enough to
    point at the claim clearly but short enough to stay stable.
@@ -110,14 +145,18 @@ stories and a later checker all depend on. The Tests script is its acceptance ch
 
 ## Tests
 
-The project has no test suite. Run this from the repo root:
+The project has no test suite. Run this from the repo root. Put the forqsite clone's
+location in `FORQSITE_CLONE` on the command line
+(`FORQSITE_CLONE=<clone path> bash <this block>`). Never write it into the repo, so the
+host-path grep below still applies:
 
 ```bash
+: "${FORQSITE_CLONE:?set FORQSITE_CLONE to the local forqsite clone}"
 S=$(mktemp -d)
 for p in index.html gap-handoff.html; do python3 scripts/bundle-template.py verify $p && python3 scripts/bundle-template.py extract $p $S/$p; done
 python3 - "$S" <<'EOF'
-import json, re, sys
-S = sys.argv[1]; m = json.load(open('docs/claims-manifest.json'))
+import json, os, re, subprocess, sys
+S = sys.argv[1]; m = json.load(open('docs/claims-manifest.json')); clone = os.environ['FORQSITE_CLONE']
 r = m['release']; assert re.fullmatch(r'[0-9a-f]{40}', r['commit']) and r['committed'] and r['pinned']
 assert r['commit'] in open('docs/phases/phase-12.md').read(), 'release commit not in phase doc'
 stamps = {s['id']: s for s in m['stamps']}
@@ -135,6 +174,26 @@ assert set(stamps) <= cited, f'uncovered stamps: {set(stamps) - cited}'
 for c in m['claims']:
     assert c['evidence'] or c.get('note'), c['id']
     for e in c['evidence']: assert e['path'] and not e['path'].startswith(('/', '~')) and e['symbol'], c['id']
+files = {}
+def show(path):
+    if path not in files:
+        p = subprocess.run(['git', '-C', clone, 'show', f"{r['commit']}:{path}"], capture_output=True, text=True, errors='replace')
+        assert p.returncode == 0, f'{path} not in forqsite at release commit'
+        files[path] = p.stdout
+    return files[path]
+for c in m['claims']:
+    for e in c['evidence']: assert e['symbol'] in show(e['path']), f"{c['id']}: symbol not in {e['path']} at release commit"
+gh = {s['id'] for s in m['stamps'] if s['page'] == 'gap-handoff.html'}
+kg = [c for c in m['claims'] if c['page'] == 'index.html' and set(re.findall(r'\bS-\d+\b', c.get('note', ''))) & gh]
+assert len(kg) == 1, f'expected one Known-gaps claim naming a gap-handoff stamp, found {len(kg)}'
+foot = set(re.findall(r'\bS-\d+\b', kg[0]['note'])) & gh
+assert len(foot) == 1, 'Known-gaps note must name exactly one gap-handoff stamp'
+foot = foot.pop(); key = lambda e: (e['path'], e['symbol'])
+union = {key(e) for c in m['claims'] if c['stamp'] == foot for e in c['evidence']}
+got = [key(e) for e in kg[0]['evidence']]
+assert union and len(got) == len(set(got)) and set(got) == union, 'Known-gaps evidence is not the footer-stamp union'
+for x in m['claims'] + m['stamps']:
+    assert not re.search(r'\bC-\d+', x.get('note', '')), f"{x['id']}: note references a claim ID"
 print('OK', len(stamps), 'stamps,', len(m['claims']), 'claims')
 EOF
 grep -nE '/mnt/|/home/|~/' docs/claims-manifest.json docs/phases/phase-12.md; test $? -eq 1
@@ -143,7 +202,8 @@ git diff --quiet main -- index.html gap-handoff.html
 
 Pass means the script prints `OK`, the host-path grep finds nothing, and `git diff` exits
 0. The reviewer also reads every claim against its `location` and checks that none is
-invented.
+invented, and checks that each claim whose page wording differs from the cited file (for
+example the restore script's `set -x`) has a `MISMATCH:` note.
 
 ## Out of scope
 
