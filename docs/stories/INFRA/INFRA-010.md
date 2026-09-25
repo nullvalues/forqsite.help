@@ -117,9 +117,9 @@ bound with a `Content-Length` response. Those traps are where the length goes.)*
 ## Tests
 
 ```bash
-cd /mnt/work/forqsite.help && ./scripts/drift-check-selftest.sh
-cd /mnt/work/forqsite.help && ./scripts/provenance-selftest.sh
-cd /mnt/work/forqsite.help && ./scripts/deploy-selftest.sh
+cd "$(git rev-parse --show-toplevel)" && ./scripts/drift-check-selftest.sh
+cd "$(git rev-parse --show-toplevel)" && ./scripts/provenance-selftest.sh
+cd "$(git rev-parse --show-toplevel)" && ./scripts/deploy-selftest.sh
 ```
 
 Acceptance: all three are green. `drift-check-selftest.sh` reports its nine original cases plus

@@ -17,7 +17,7 @@ touches:
 
 ## Requires
 
-- `/mnt/work/forqsite` checked out at the version referenced (used as ground truth for
+- the local forqsite clone checked out at the version referenced (used as ground truth for
   every claim below — re-verify each cited path/line still says what's quoted here
   before changing the docs, since forqsite may have moved on since this story was
   written).
@@ -79,7 +79,7 @@ touches:
 
 Full evidence trail and exact before/after wording for every item above is preserved in
 the git history of this conversation's session — if unavailable, re-derive each claim
-directly from `/mnt/work/forqsite` (paths cited above) rather than guessing. Do not
+directly from the local forqsite clone (paths cited above) rather than guessing. Do not
 change anything not covered by the Ensures list above; scope creep into embellishments,
 UX, or prose belongs in CONTENT-002/003/004.
 

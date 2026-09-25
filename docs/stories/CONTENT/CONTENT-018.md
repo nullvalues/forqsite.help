@@ -37,7 +37,7 @@ change (`#promote`) already names, referencing that vocabulary and never redefin
   and **content** streams, and `goPromote: this.nav('promote')` already exists in
   `renderVals()` (added by CONTENT-017). This section uses those words in that sense and
   does not restate their definitions.
-- `/mnt/work/forqsite` checked out at `7089b9dc` (branch `main`), clean. Every claim below
+- the local forqsite clone checked out at `7089b9dc` (branch `main`), clean. Every claim below
   was verified there on 2026-09-19; the citations in `## Instructions` are the evidence a
   reviewer re-checks, at that commit.
 
@@ -190,12 +190,12 @@ phrased (same-breath rollback, no advice-voice) in ways a builder cannot infer.
 ## Tests
 
 ```bash
-cd /mnt/work/forqsite.help
+cd "$(git rev-parse --show-toplevel)"
 python3 scripts/bundle-template.py verify index.html
 python3 scripts/bundle-template.py extract index.html /tmp/check.html
 node --check <(sed -n '/type="text\/x-dc"/,/<\/script>/p' /tmp/check.html | sed '1d;$d')
 chromium --headless --disable-gpu --no-sandbox --virtual-time-budget=5000 \
-  --dump-dom 'file:///mnt/work/forqsite.help/index.html#ops' > /tmp/ops.dom
+  --dump-dom "file://$PWD/index.html#ops" > /tmp/ops.dom
 grep -ci 'two releases, never one' /tmp/ops.dom
 grep -ci 'previous version' /tmp/ops.dom
 grep -c 'db:migrate' /tmp/ops.dom
@@ -209,7 +209,7 @@ Acceptance: `verify` reports byte-identical; `node --check` exits 0; the rendere
 DOM contains the two-releases sentence, the previous-version rule, the stamp, and the
 unchanged six-command block; the build-process-vocabulary grep and the
 reversible-migration grep both return 0; no external `src`/`href` is introduced. Also open
-`file:///mnt/work/forqsite.help/index.html#ops` and confirm both new links navigate (to
+`file://$PWD/index.html#ops` and confirm both new links navigate (to
 `#supervision` and `#promote`), the COPY control on the upgrade block still works, and the
 rollback instruction and the schema-stays-applied clause are in the same sentence, not
 split across a step and a callout.

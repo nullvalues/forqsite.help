@@ -149,7 +149,7 @@ No test suite exists (`test_command` is `true`). The selftests are the acceptanc
 Paste their full output into the build note.
 
 ```bash
-cd /mnt/work/forqsite.help && ./scripts/deploy-selftest.sh && ./scripts/provenance-selftest.sh
+cd "$(git rev-parse --show-toplevel)" && ./scripts/deploy-selftest.sh && ./scripts/provenance-selftest.sh
 bash -n scripts/deploy.sh && bash -n scripts/deploy-selftest.sh
 grep -nE '\.deploy-\$\{?STAMP|cp -p' scripts/deploy.sh   # expect no output
 ```

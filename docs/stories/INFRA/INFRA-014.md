@@ -167,9 +167,9 @@ forbidden proxies that the obvious fixes walk into. That is where the length goe
 ## Tests
 
 ```bash
-cd /mnt/work/forqsite.help && ./scripts/deploy-selftest.sh
-cd /mnt/work/forqsite.help && ./scripts/provenance-selftest.sh
-cd /mnt/work/forqsite.help && ./scripts/drift-check-selftest.sh
+cd "$(git rev-parse --show-toplevel)" && ./scripts/deploy-selftest.sh
+cd "$(git rev-parse --show-toplevel)" && ./scripts/provenance-selftest.sh
+cd "$(git rev-parse --show-toplevel)" && ./scripts/drift-check-selftest.sh
 ```
 
 Acceptance:

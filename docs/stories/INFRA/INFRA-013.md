@@ -147,7 +147,7 @@ There is no test suite (`test_command` is `true`). The selftests are the accepta
 evidence. Paste their full output into the build note.
 
 ```bash
-cd /mnt/work/forqsite.help && ./scripts/deploy-selftest.sh && ./scripts/drift-check-selftest.sh && ./scripts/provenance-selftest.sh
+cd "$(git rev-parse --show-toplevel)" && ./scripts/deploy-selftest.sh && ./scripts/drift-check-selftest.sh && ./scripts/provenance-selftest.sh
 bash -n scripts/deploy.sh scripts/drift-check.sh scripts/read-deploy-env.sh
 grep -nE 'source[[:space:]]+"?scripts/deploy\.env|\beval\b' scripts/deploy.sh scripts/drift-check.sh scripts/read-deploy-env.sh   # expect no output
 ```

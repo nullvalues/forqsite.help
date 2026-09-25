@@ -48,7 +48,7 @@ corrupted artifact.
 ## Public-repo constraint
 
 This repo is public. The gap ledger currently prints an absolute path from the
-original build machine (`file:/mnt/work/ud/…`) in two files. That is both a
+original build machine (a `file:` URL) in two files. That is both a
 disclosure and obsolete — the dependency it describes no longer exists. It goes
 out with CONTENT-008 rather than being edited around.
 
@@ -103,7 +103,7 @@ settled the vocabulary. INFRA-004 is independent.
 - [x] **round-trip.** Both bundles verify byte-identical after every inject; a
       no-op extract/inject cycle was `cmp`-confirmed to change nothing.
 - [x] **public hygiene.** No internal path, host or address in any shipped file.
-      `/mnt/work` is gone from both bundles; the two remaining GAP-002/011
+      the original build machine's path is gone from both bundles; the two remaining GAP-002/011
       mentions are deliberate "previously reported, now fixed" notes carrying no
       path.
 - [x] **written-never-read (adapted).** No dangling cross-reference: the data

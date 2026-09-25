@@ -39,7 +39,7 @@ touches:
 
 `example_tool.py normalize --path P` is meant to canonicalize a project path before
 it is written into `state.json`, but a trailing slash on `P` currently survives
-untouched, so `--path /mnt/work/foo/` and `--path /mnt/work/foo` produce two
+untouched, so `--path P/` and `--path P` produce two
 different keys for the same project. This has already caused one duplicate
 registration in the fleet (the same failure shape as CER-058, on a smaller
 surface). The fix is a single normalization step at the one place paths enter

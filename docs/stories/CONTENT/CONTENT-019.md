@@ -35,7 +35,7 @@ forqsite's own backlog and is the operator's (phase doc, "What is NOT in scope")
 - The bundle-edit path: `scripts/bundle-template.py extract|inject|verify`. Extract each
   bundle to a scratch file, edit only there, inject once, verify. Never hand-edit the
   encoded `__bundler/template` payload inside `gap-handoff.html` or `index.html`.
-- `/mnt/work/forqsite` checked out at `7089b9dc` (branch `main`). Every claim below was
+- the local forqsite clone checked out at `7089b9dc` (branch `main`). Every claim below was
   verified there on 2026-09-19; the citations in `## Instructions` are the evidence a
   reviewer re-checks, at that commit.
 - CONTENT-017 complete: that a pack's block configuration is `jsonb` on the block row,
@@ -184,13 +184,13 @@ page it is editing.
 ## Tests
 
 ```bash
-cd /mnt/work/forqsite.help
+cd "$(git rev-parse --show-toplevel)"
 python3 scripts/bundle-template.py verify gap-handoff.html
 python3 scripts/bundle-template.py verify index.html
 python3 scripts/bundle-template.py extract gap-handoff.html /tmp/check-gap.html
 node --check <(sed -n '/type="text\/x-dc"/,/<\/script>/p' /tmp/check-gap.html | sed '1d;$d')
 chromium --headless --disable-gpu --no-sandbox --virtual-time-budget=5000 \
-  --dump-dom 'file:///mnt/work/forqsite.help/gap-handoff.html#gap-012' > /tmp/gap.dom
+  --dump-dom "file://$PWD/gap-handoff.html#gap-012" > /tmp/gap.dom
 grep -c 'GAP-012' /tmp/gap.dom
 grep -ci 'nine of them' /tmp/gap.dom
 grep -c '× 4' /tmp/gap.dom
@@ -200,7 +200,7 @@ grep -Eic 'release notes' /tmp/gap.dom
 grep -Eic 'R[0-4]\b|\bring\b|\bstory\b|CONTENT-019' /tmp/gap.dom
 grep -Eic 'migrate\(|dual.read|\?\? data\.|manifest carries' /tmp/gap.dom
 chromium --headless --disable-gpu --no-sandbox --virtual-time-budget=5000 \
-  --dump-dom 'file:///mnt/work/forqsite.help/index.html#gaps' > /tmp/idx.dom
+  --dump-dom "file://$PWD/index.html#gaps" > /tmp/idx.dom
 grep -c 'GAP-012' /tmp/idx.dom
 ```
 

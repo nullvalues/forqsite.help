@@ -79,7 +79,7 @@ bundles, and apply "Name the class, not the instance" as written. No conflict.
 ## Tests
 
 ```bash
-cd /mnt/work/forqsite.help
+cd "$(git rev-parse --show-toplevel)"
 # 1. The address, in any form, outside the bundles. Expect only project-name uses, classified by the reviewer.
 git grep -nIi 'forqsite\.help' -- . ':!index.html' ':!gap-handoff.html'
 # 2. The scheme-qualified form, which must be zero.

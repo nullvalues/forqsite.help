@@ -32,7 +32,7 @@ referencing that vocabulary, never redefining it.
 - CONTENT-016 complete: the `promote` page exists and defines the **artifact**, **schema**
   and **content** streams. This section uses those three words in that sense and does not
   restate their definitions.
-- `/mnt/work/forqsite` checked out at `7089b9dc` (branch `main`), clean. Every claim below
+- the local forqsite clone checked out at `7089b9dc` (branch `main`), clean. Every claim below
   was verified there; the citations in `## Instructions` are the evidence a reviewer
   re-checks, at that commit.
 
@@ -182,12 +182,12 @@ sentence it instructs is a claim about a second repository and carries its own c
 ## Tests
 
 ```bash
-cd /mnt/work/forqsite.help
+cd "$(git rev-parse --show-toplevel)"
 python3 scripts/bundle-template.py verify index.html
 python3 scripts/bundle-template.py extract index.html /tmp/check.html
 node --check <(sed -n '/type="text\/x-dc"/,/<\/script>/p' /tmp/check.html | sed '1d;$d')
 chromium --headless --disable-gpu --no-sandbox --virtual-time-budget=5000 \
-  --dump-dom 'file:///mnt/work/forqsite.help/index.html#ops' > /tmp/ops.dom
+  --dump-dom "file://$PWD/index.html#ops" > /tmp/ops.dom
 grep -c 'provider_storage' /tmp/ops.dom
 grep -c 'dataSchema' /tmp/ops.dom
 grep -ci 'health check' /tmp/ops.dom
@@ -199,7 +199,7 @@ grep -Eo '<(img|use|link|script)[^>]*(src|href)="(https?:|//)[^"]*"' /tmp/ops.do
 Acceptance: `verify` reports byte-identical; `node --check` exits 0; the rendered `#ops`
 DOM contains `provider_storage`, `dataSchema`, the health-check sentence and the stamp; the
 build-process-vocabulary grep returns 0; no external `src`/`href` is introduced. Also open
-`file:///mnt/work/forqsite.help/index.html#ops` and confirm the link into Promoting a change
+`file://$PWD/index.html#ops` and confirm the link into Promoting a change
 navigates and the page's existing install steps still render.
 
 ## Out of scope

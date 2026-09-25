@@ -20,7 +20,7 @@ touches: []
 - Phase 2 (`CONTENT-001..004`, `INFRA-001`) complete. Those stories were the last
   content sync; both bundles were last touched at the Phase 2 checkpoint,
   `forqsite.help@3289ab1` (2026-07-16 23:41 -0400).
-- `/mnt/work/forqsite` present on disk, on `main`. **This repo is READ-ONLY for this
+- the local forqsite clone present on disk, on `main`. **This repo is READ-ONLY for this
   story.** Never write, stage, commit, checkout, stash or `git clean` in it. Its working
   tree is currently dirty with unrelated harness edits (`.claude/agents/*.md`); leave
   them alone and do not let them enter your reasoning about product drift.
@@ -29,7 +29,7 @@ touches: []
 **Baseline correction (read this before diffing).** The phase doc calls the last sync
 "2026-07-22". That date is the pairmode-0.3.0 migration activity in the *source* repo,
 not the last content sync of this site. The bundles were last synced 2026-07-16. The
-correct diff baseline in `/mnt/work/forqsite` is therefore:
+correct diff baseline in the local forqsite clone is therefore:
 
 ```bash
 BASE=90b64b99   # 2026-07-16 23:19 -0400, last forqsite commit before forqsite.help@3289ab1
@@ -61,7 +61,7 @@ explicitly out of scope (see `## Out of scope`).
 **Claims re-verified and left unchanged (regression guards — these must still hold):**
 
 3. `index.html`'s "What the scheduler owns" section still says **Ten** jobs and
-   `schedulerJobs` still has 10 entries; `grep -c "name: '" /mnt/work/forqsite/scripts/scheduler.ts`
+   `schedulerJobs` still has 10 entries; `grep -c "name: '" "$FORQSITE_CLONE"/scripts/scheduler.ts`
    returns `10`. If the counts diverge, both the prose word and the array are corrected
    together.
 4. The gap-ledger ID set is unchanged and consistent across both files: the `id:` values
@@ -69,8 +69,8 @@ explicitly out of scope (see `## Out of scope`).
    GAP-006, GAP-007, GAP-008, GAP-009, GAP-010, GAP-011`, and the same set appears in
    `gap-handoff.html`. An item is pruned from **both** files only if the builder can cite
    the upstream commit that closed it. (Expected outcome: no prunes — GAP-002's
-   `file:/mnt/work/ud/…` tarballs and GAP-005's `next dev -p 6020` are both still present
-   in `/mnt/work/forqsite/package.json`.)
+   original-build-machine `file:` tarballs and GAP-005's `next dev -p 6020` are both still present
+   in the local forqsite clone's `package.json`.)
 5. `index.html`'s `ENV` array is unchanged unless the builder cites an upstream env-key
    change; no file that reads environment configuration appears in the baseline diff.
 
@@ -84,15 +84,15 @@ explicitly out of scope (see `## Out of scope`).
    blocks are byte-identical to the pre-edit versions.
 8. No new external asset reference is introduced: the count of `src="http` and
    `href="http` occurrences in each file is unchanged from the pre-edit count.
-9. `git -C /mnt/work/forqsite status --porcelain` output is byte-identical before and
+9. `git -C "$FORQSITE_CLONE" status --porcelain` output is byte-identical before and
    after the build (proves the source repo was treated read-only).
 
 ## Instructions
 
-**Step 1 — establish the diff surface.** In `/mnt/work/forqsite`, read-only:
+**Step 1 — establish the diff surface.** In the local forqsite clone, read-only:
 
 ```bash
-cd /mnt/work/forqsite
+cd "$FORQSITE_CLONE"
 BASE=90b64b99
 git log --oneline $BASE..HEAD -- src scripts package.json docs/architecture.md drizzle
 git diff --name-only $BASE..HEAD -- src scripts package.json docs/architecture.md drizzle
@@ -120,7 +120,7 @@ Decode to a scratch file, edit the *decoded* text, then re-encode. Never hand-ed
 escaped JSON in place.
 
 ```bash
-cd /mnt/work/forqsite.help
+cd "$(git rev-parse --show-toplevel)"
 python3 - <<'PY'
 import json
 MARK = '<script type="__bundler/template">'
@@ -171,7 +171,7 @@ constraint, which has no override path, across those edits. Keeping the diff min
 Verification is grep- and inspection-shaped. Run all of these; all must pass.
 
 ```bash
-cd /mnt/work/forqsite.help
+cd "$(git rev-parse --show-toplevel)"
 
 # T1 — bundle round-trip: both templates still parse as one JSON string (exit 0)
 python3 - <<'PY'
@@ -189,7 +189,7 @@ grep -c '9\.15\.9' index.html
 grep -c "min: '8+'" index.html    # must be 0
 
 # T3 — scheduler job count still 10 on both sides (Ensures 3)
-grep -c "name: '" /mnt/work/forqsite/scripts/scheduler.ts        # expect 10
+grep -c "name: '" "$FORQSITE_CLONE"/scripts/scheduler.ts        # expect 10
 grep -o "name: '[a-z-]*', schedule" index.html | wc -l           # expect 10
 
 # T4 — gap ledger ID set identical across both bundles (Ensures 4)
@@ -206,7 +206,7 @@ done
 git status --porcelain            # expect only ' M index.html' and/or ' M gap-handoff.html'
 
 # T7 — source repo untouched (Ensures 9)
-git -C /mnt/work/forqsite status --porcelain   # expect the same 3 .claude/agents/*.md lines as before
+git -C "$FORQSITE_CLONE" status --porcelain   # expect the same 3 .claude/agents/*.md lines as before
 ```
 
 Acceptance: T1 exits 0 for both files; T2 shows a non-zero hit and a zero; T3 prints 10
@@ -233,5 +233,5 @@ and the Prerequisites table must show the corrected pnpm version.
 - **Re-export from the source design session, or building an auto-sync tool.** Still
   unbuilt (see `docs/phases/phase-2.md`); this remains a loop-mediated hand-patch.
 - **`README.md`** — INFRA-001 owns its framing; not part of this drift sweep.
-- **Any write to `/mnt/work/forqsite`**, including committing its unrelated dirty
+- **Any write to the local forqsite clone**, including committing its unrelated dirty
   `.claude/agents/*.md` files.

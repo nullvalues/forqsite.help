@@ -34,7 +34,7 @@ had and CONTENT-016's lacked — which is precisely how the defect shipped.
 - The bundle-edit path: `scripts/bundle-template.py extract|inject|verify`. Extract once to
   a scratch file, edit only there, inject once, verify. Do not hand-edit the encoded
   `__bundler/template` payload inside `index.html`.
-- `/mnt/work/forqsite` at `7089b9dc`. The evidence below was re-verified there on
+- the local forqsite clone at `7089b9dc`. The evidence below was re-verified there on
   2026-09-21: `scripts/rolling-restart.sh:18` drives `docker compose -f
   docker-compose.rolling.yml`, `:21,30,40,49` stop and `up -d --build` the two *container*
   services `forqsite_a`/`forqsite_b`, and `:24,33,43,52` poll `localhost:3000`/`:3001` —
@@ -115,7 +115,7 @@ constraint under its Phase 2 loop-mediated exception; the change is prose plus o
 nav handler, so the Zero-runtime-dependencies constraint (no override permitted) is
 untouched.
 
-*Scope note:* `scripts/bundle-template.py` is read, not modified, and the `/mnt/work/forqsite`
+*Scope note:* `scripts/bundle-template.py` is read, not modified, and the local forqsite clone
 paths cited are evidence in a sibling repository — both are deliberately absent from
 `touches:`. `index.html` is the only file this story writes. Spec-preflight warnings on
 `/api/health` or `FORQSITE_ROLLING_RESTART`-class names are expected: they are defined in
@@ -131,14 +131,14 @@ correct and must be explicitly fenced off so a builder does not over-correct.
 ## Tests
 
 ```bash
-cd /mnt/work/forqsite.help
+cd "$(git rev-parse --show-toplevel)"
 python3 scripts/bundle-template.py verify index.html
 python3 scripts/bundle-template.py extract index.html /tmp/check.html
 node --check <(sed -n '/type="text\/x-dc"/,/<\/script>/p' /tmp/check.html | sed '1d;$d')
 sed -n '/PAGE: PROMOTING A CHANGE/,/PAGE: ENV REFERENCE/p' /tmp/check.html | grep -c 'rolling-restart'
 grep -c 'rolling-restart\.sh' /tmp/check.html
 chromium --headless --disable-gpu --no-sandbox --virtual-time-budget=5000 \
-  --dump-dom 'file:///mnt/work/forqsite.help/index.html#promote' > /tmp/promote.dom
+  --dump-dom "file://$PWD/index.html#promote" > /tmp/promote.dom
 grep -c 'verified 2026-09-21 against nullvalues/forqsite@7089b9dc' /tmp/promote.dom
 grep -c 'systemctl restart forqsite forqsite-scheduler' /tmp/promote.dom
 sed -n '/PAGE: PROMOTING A CHANGE/,/PAGE: ENV REFERENCE/p' /tmp/check.html \
@@ -150,7 +150,7 @@ contains zero `rolling-restart` matches while the whole template still contains 
 `rolling-restart.sh` occurrences (Provider lifecycle swap step 5, GAP-004); the rendered
 `#promote` DOM carries the new stamp and the plain `systemctl restart` command; the
 forbidden-vocabulary grep over the promote-page range returns 0 (it returns 0 today — the
-page has no container vocabulary to begin with). Also open `file:///mnt/work/forqsite.help/index.html#promote`
+page has no container vocabulary to begin with). Also open `file://$PWD/index.html#promote`
 and confirm the new link navigates to `#supervision`. Finally, `git diff index.html` must
 show changes confined to the promote page's built-once paragraph and its stamp line.
 

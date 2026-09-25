@@ -11,7 +11,7 @@ era: "001"
 ## Goal
 
 A prior review agent diffed `index.html` and `gap-handoff.html` against the current
-state of the sibling source-of-truth repo `/mnt/work/forqsite` and produced a detailed,
+state of the sibling source-of-truth repo (the local forqsite clone) and produced a detailed,
 evidence-backed edit plan: consistency fixes where the docs have drifted from the code,
 embellishments grounded in real repo evidence, UX fixes to the bundle's own JS/CSS, and
 a prose-decluttering pass. README.md also needs its "do not hand-edit" framing revisited

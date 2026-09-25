@@ -136,9 +136,9 @@ fix walks straight into. The length is spent there.)*
 ## Tests
 
 ```bash
-cd /mnt/work/forqsite.help && ./scripts/drift-check-selftest.sh
-cd /mnt/work/forqsite.help && ./scripts/deploy-selftest.sh
-cd /mnt/work/forqsite.help && ./scripts/provenance-selftest.sh
+cd "$(git rev-parse --show-toplevel)" && ./scripts/drift-check-selftest.sh
+cd "$(git rev-parse --show-toplevel)" && ./scripts/deploy-selftest.sh
+cd "$(git rev-parse --show-toplevel)" && ./scripts/provenance-selftest.sh
 ```
 
 Acceptance: all three green. `drift-check-selftest.sh` reports its original seven cases plus

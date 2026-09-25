@@ -86,7 +86,7 @@ No test suite exists (`test_command` is `true`); the selftest is the acceptance 
 its full output into the build note.
 
 ```bash
-cd /mnt/work/forqsite.help && ./scripts/deploy-selftest.sh
+cd "$(git rev-parse --show-toplevel)" && ./scripts/deploy-selftest.sh
 grep -c "printf '%q'" scripts/deploy.sh   # expect 0
 bash -n scripts/deploy.sh && bash -n scripts/deploy-selftest.sh
 ```
@@ -96,7 +96,7 @@ from the grep. "A configuration that deploys today still deploys" is checked wit
 the value — run from the main project directory, where the gitignored config lives:
 
 ```bash
-cd /mnt/work/forqsite.help && ( h="${FORQSITE_HELP_DEPLOY_HOST:-}"; [ -z "$h" ] && [ -f scripts/deploy.env ] && h="$(. scripts/deploy.env; printf '%s' "${FORQSITE_HELP_DEPLOY_HOST:-}")"
+cd "$(git rev-parse --show-toplevel)" && ( h="${FORQSITE_HELP_DEPLOY_HOST:-}"; [ -z "$h" ] && [ -f scripts/deploy.env ] && h="$(. scripts/deploy.env; printf '%s' "${FORQSITE_HELP_DEPLOY_HOST:-}")"
   if [ -z "$h" ]; then echo "NOT CONFIGURED HERE"; elif [[ "$h" =~ ^[A-Za-z0-9._][A-Za-z0-9._-]*$ ]]; then echo PASS; else echo FAIL; fi )
 ```
 

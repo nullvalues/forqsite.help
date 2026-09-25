@@ -172,7 +172,7 @@ The working-tree assertion. It reads its own search terms out of history, so nei
 builder nor the reviewer types an identifier (verified to run, 2026-09-21):
 
 ```bash
-cd /mnt/work/forqsite.help
+cd "$(git rev-parse --show-toplevel)"
 mapfile -t IDS < <(git show 8bb837b:docs/cer/backlog.md \
   | grep '^| CER-003 ' | grep -o '`[^`]*`' | tr -d '`')
 [ "${#IDS[@]}" -eq 3 ] || { echo "FAIL: expected 3 identifiers, got ${#IDS[@]}"; exit 1; }

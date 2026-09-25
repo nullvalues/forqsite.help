@@ -250,7 +250,7 @@ never names the directory it sits in.
 No test suite (`test_command=true`, static HTML). These are the story's verification commands.
 
 ```bash
-cd /mnt/work/forqsite.help
+cd "$(git rev-parse --show-toplevel)"
 test ! -e docs/pairmode-wiring-audit.md && echo AUDIT-DOC-REMOVED
 grep -rIl 'pairmode-wiring-audit' . --exclude-dir=.git | sort
 ```
@@ -296,7 +296,7 @@ population**, not for whatever the database holds at review time — more storie
 by then, and a probe frozen to a live total would fail for the wrong reason:
 
 ```bash
-cd /mnt/work/forqsite.help
+cd "$(git rev-parse --show-toplevel)"
 python3 - <<'PY'
 import sqlite3
 db = sqlite3.connect('file:.companion/effort.db?mode=ro', uri=True)

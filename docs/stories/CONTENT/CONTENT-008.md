@@ -16,7 +16,7 @@ touches: []
 ## Background
 
 Two gap items are resolved, and one of them was also a disclosure: the ledger
-printed `file:/mnt/work/ud/…`, an absolute path on the original build machine, in
+printed a `file:` URL, an absolute path on the original build machine, in
 a public repository.
 
 ## Verified before pruning, not assumed

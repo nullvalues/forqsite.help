@@ -221,7 +221,7 @@ selftest plus the hygiene and byte-identity checks. **Run the selftest and paste
 output into the build note.** It must exercise every case below and report each by name:
 
 ```bash
-cd /mnt/work/forqsite.help && ./scripts/provenance-selftest.sh
+cd "$(git rev-parse --show-toplevel)" && ./scripts/provenance-selftest.sh
 ```
 
 | Case | Setup | Must hold |
@@ -244,7 +244,7 @@ zero occurrences of any hostname other than `127.0.0.1`.
 Byte-identity of the published bundles, asserted directly:
 
 ```bash
-cd /mnt/work/forqsite.help
+cd "$(git rev-parse --show-toplevel)"
 git diff --stat HEAD -- index.html gap-handoff.html
 git grep -n -c 'site-provenance' -- index.html gap-handoff.html || echo "PASS: sidecar name absent from both bundles"
 ```
@@ -255,7 +255,7 @@ The hygiene assertion, deriving its search terms from history so neither builder
 types an identifier (the CONTENT-024 form, as reused by INFRA-006 and INFRA-007):
 
 ```bash
-cd /mnt/work/forqsite.help
+cd "$(git rev-parse --show-toplevel)"
 mapfile -t IDS < <(git show 8bb837b:docs/cer/backlog.md \
   | grep '^| CER-003 ' | grep -o '`[^`]*`' | tr -d '`')
 [ "${#IDS[@]}" -eq 3 ] || { echo "FAIL: expected 3 identifiers, got ${#IDS[@]}"; exit 1; }

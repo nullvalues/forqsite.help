@@ -118,7 +118,7 @@ the audit doc; and nothing under `~/flex-marketplace-cache/` is modified.
 ## Tests
 
 ```bash
-cd /mnt/work/forqsite.help
+cd "$(git rev-parse --show-toplevel)"
 test -f docs/pairmode-wiring-audit.md && echo AUDIT-DOC-OK
 test ! -e .claude/agents/gate-worker.md && echo GATE-WORKER-REMOVED
 git tag -l 'cp-*'   # expected: empty — the fact the audit doc must record

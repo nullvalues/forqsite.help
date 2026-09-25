@@ -17,7 +17,7 @@ touches: []
   editing the same bundle script tag out of order).
 - Same bundle-format handling as CONTENT-001 — see that story's Requires section for the
   unpack/edit/repack procedure.
-- `/mnt/work/forqsite` available as ground truth for every addition below; re-verify
+- the local forqsite clone available as ground truth for every addition below; re-verify
   cited paths before writing, don't invent detail not backed by the source.
 
 ## Ensures

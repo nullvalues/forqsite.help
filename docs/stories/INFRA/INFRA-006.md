@@ -181,7 +181,7 @@ selftest plus one hygiene check. **Run the selftest and paste its full output in
 note.** It must exercise all five cases and report each by name:
 
 ```bash
-cd /mnt/work/forqsite.help && ./scripts/deploy-selftest.sh
+cd "$(git rev-parse --show-toplevel)" && ./scripts/deploy-selftest.sh
 ```
 
 | Case | Setup | Must hold |
@@ -201,7 +201,7 @@ The hygiene assertion, deriving its search terms from history so neither builder
 types an identifier (the CONTENT-024 form, verified there on 2026-09-21):
 
 ```bash
-cd /mnt/work/forqsite.help
+cd "$(git rev-parse --show-toplevel)"
 mapfile -t IDS < <(git show 8bb837b:docs/cer/backlog.md \
   | grep '^| CER-003 ' | grep -o '`[^`]*`' | tr -d '`')
 [ "${#IDS[@]}" -eq 3 ] || { echo "FAIL: expected 3 identifiers, got ${#IDS[@]}"; exit 1; }

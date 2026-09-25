@@ -29,7 +29,7 @@ CONTENT-018 both name the streams this page defines, so it lands first.
 - The bundle-edit path: `scripts/bundle-template.py extract|inject|verify`. Extract
   once to a scratch file, make every edit there, inject once, verify. Do not
   hand-edit the encoded template inside `index.html`.
-- `/mnt/work/forqsite` checked out at `7089b9dc` (branch `main`). Its
+- the local forqsite clone checked out at `7089b9dc` (branch `main`). Its
   `docs/deployment/promotion-model.html` is the source model. Read it before
   writing. It is the internal statement; this page is the reader-facing one, with
   different vocabulary rules — not a copy.
@@ -146,12 +146,12 @@ this story authors an original diagram and is bound by two vocabulary constraint
 ## Tests
 
 ```bash
-cd /mnt/work/forqsite.help
+cd "$(git rev-parse --show-toplevel)"
 python3 scripts/bundle-template.py verify index.html
 python3 scripts/bundle-template.py extract index.html /tmp/check.html
 node --check <(sed -n '/type="text\/x-dc"/,/<\/script>/p' /tmp/check.html | sed '1d;$d')
 chromium --headless --disable-gpu --no-sandbox --virtual-time-budget=5000 \
-  --dump-dom 'file:///mnt/work/forqsite.help/index.html#promote' > /tmp/promote.dom
+  --dump-dom "file://$PWD/index.html#promote" > /tmp/promote.dom
 grep -c 'Promoting a change' /tmp/promote.dom
 grep -Eic 'R[0-4]\b|\bring\b|docker|container|\bimage\b' /tmp/promote.dom
 grep -c 'nullvalues/forqsite@7089b9dc' /tmp/promote.dom
@@ -161,7 +161,7 @@ grep -Eo '<(img|use|link|script)[^>]*(src|href)="(https?:|//)[^"]*"' /tmp/promot
 Acceptance: `verify` reports byte-identical; `node --check` exits 0; the rendered
 `#promote` DOM contains the page heading and the stamp; the forbidden-vocabulary grep
 returns 0 within the new page block; no external `src`/`href` is introduced. Also open
-`file:///mnt/work/forqsite.help/index.html#promote` and confirm the SVG renders and
+`file://$PWD/index.html#promote` and confirm the SVG renders and
 the nav entry highlights.
 
 ## Out of scope
