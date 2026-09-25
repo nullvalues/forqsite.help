@@ -10,9 +10,9 @@
       "id": "S-01",
       "page": "index.html",
       "location": "Sidebar, under the \"Known gaps →\" link (every route)",
-      "text": "repo: nullvalues/forqsite@17b78645<br>verified: 2026-09-16",
-      "commit": "17b78645",
-      "date": "2026-09-16",
+      "text": "repo: nullvalues/forqsite@1fda3228<br>verified: 2026-09-24",
+      "commit": "1fda3228",
+      "date": "2026-09-24",
       "scope": "The Known gaps callout: the claim that the linked gaps list (gap-handoff.html) is current at this commit."
     },
     {
@@ -55,18 +55,18 @@
       "id": "S-06",
       "page": "gap-handoff.html",
       "location": "GAP-012 entry, last row of the EVIDENCE table",
-      "text": "['nullvalues/forqsite@7089b9dc', 'every line above checked at this commit on 2026-09-19']",
-      "commit": "7089b9dc",
-      "date": "2026-09-19",
+      "text": "['nullvalues/forqsite@1fda3228', 'every line above checked at this commit on 2026-09-24']",
+      "commit": "1fda3228",
+      "date": "2026-09-24",
       "scope": "Table-row stamp: the five GAP-012 evidence rows above it. The GAP-012 entry as a whole (its problem statement) is a GAP entry and is covered by the footer stamp."
     },
     {
       "id": "S-07",
       "page": "gap-handoff.html",
       "location": "Page footer, below the last GAP entry",
-      "text": "forqsite known gaps · verified against nullvalues/forqsite@17b78645 · 16 september 2026",
-      "commit": "17b78645",
-      "date": "2026-09-16",
+      "text": "forqsite known gaps · verified against nullvalues/forqsite@1fda3228 · 24 september 2026",
+      "commit": "1fda3228",
+      "date": "2026-09-24",
       "scope": "Page footer: every GAP entry (GAP-003 to GAP-010, including GAP-012), one claim per entry for its problem statement and evidence rows, except the GAP-012 evidence rows, which carry their own table-row stamp."
     }
   ],
@@ -676,7 +676,7 @@
       "page": "gap-handoff.html",
       "location": "GAP-003 entry, problem and evidence",
       "claim": "The repository ships no process supervision artifacts: the runbook references pm2, which nothing installs, and the scheduler script does not load .env.local except under dev.sh.",
-      "quote": "the repo ships no process supervision artifacts",
+      "quote": "§12 references pm2; no unit files or ecosystem config exist",
       "evidence": [
         {
           "path": "docs/operator-runbook.md",
@@ -692,7 +692,20 @@
         }
       ],
       "stamp": "S-07",
-      "note": "MISMATCH: page says the runbook's §7/§12 reference pm2; the file has one pm2 reference, in §12 (Upgrading forqsite), and none in §7."
+      "result": "changed",
+      "absent": [
+        {
+          "path": "package.json",
+          "symbol": "pm2"
+        },
+        {
+          "path": "deploy/systemd"
+        },
+        {
+          "path": "ecosystem.config.js"
+        }
+      ],
+      "note": "CHANGED: the runbook evidence row said \"§7/§12 reference pm2\"; the runbook has one pm2 reference, in §12 (Upgrading forqsite), and none in §7, so the row now says \"§12 references pm2\"."
     },
     {
       "id": "C-024",
@@ -726,14 +739,31 @@
           "symbol": "*.forqsite.ai, forqsite.ai, *.forqsite.com, forqsite.com {"
         }
       ],
-      "stamp": "S-07"
+      "stamp": "S-07",
+      "result": "open",
+      "absent": [
+        {
+          "path": "Dockerfile"
+        },
+        {
+          "path": "docker-compose.rolling.yml"
+        },
+        {
+          "path": "docker-compose.yml",
+          "symbol": "minio"
+        },
+        {
+          "path": "docker-compose.yml",
+          "symbol": "pgvector"
+        }
+      ]
     },
     {
       "id": "C-025",
       "page": "gap-handoff.html",
       "location": "GAP-005 entry, problem and evidence",
       "claim": "The app binds port 6020 while first-run.md, the runbook, the rolling compose file, Caddyfile.example and rolling-restart.sh all use 3000.",
-      "quote": "The app binds 6020 (package.json dev/start)",
+      "quote": "reverse_proxy * forqsite_a:3000 forqsite_b:3000",
       "evidence": [
         {
           "path": "package.json",
@@ -769,7 +799,8 @@
         }
       ],
       "stamp": "S-07",
-      "note": "MISMATCH: page quotes the Caddyfile.example line as reverse_proxy forqsite_a:3000 forqsite_b:3000; the file has reverse_proxy * forqsite_a:3000 forqsite_b:3000 {"
+      "result": "changed",
+      "note": "CHANGED: the Caddyfile.example evidence row quoted \"reverse_proxy forqsite_a:3000 forqsite_b:3000\"; the file's line is \"reverse_proxy * forqsite_a:3000 forqsite_b:3000 {\", and the row now quotes \"reverse_proxy * forqsite_a:3000 forqsite_b:3000\"."
     },
     {
       "id": "C-026",
@@ -787,7 +818,8 @@
           "symbol": "step \"7.5. Required variable check\""
         }
       ],
-      "stamp": "S-07"
+      "stamp": "S-07",
+      "result": "open"
     },
     {
       "id": "C-027",
@@ -813,7 +845,14 @@
           "symbol": "4. Log in, render a tenant's pages, verify theme and AAAC context survive."
         }
       ],
-      "stamp": "S-07"
+      "stamp": "S-07",
+      "result": "open",
+      "absent": [
+        {
+          "path": "scripts/backup.sh",
+          "symbol": "MINIO_BUCKET"
+        }
+      ]
     },
     {
       "id": "C-028",
@@ -839,7 +878,8 @@
           "symbol": "The restore script (`scripts/restore.sh`) checks for this variable under the name `AI_CREDENTIAL_ENCRYPTION_KEY`"
         }
       ],
-      "stamp": "S-07"
+      "stamp": "S-07",
+      "result": "open"
     },
     {
       "id": "C-029",
@@ -857,7 +897,8 @@
           "symbol": "`render` falls through to its null-or-default path. Nothing rewrites stored data. Renaming a"
         }
       ],
-      "stamp": "S-07"
+      "stamp": "S-07",
+      "result": "open"
     },
     {
       "id": "C-030",
@@ -875,7 +916,8 @@
           "symbol": "key is a content migration and is the operator's, planned alongside the upgrade. Renaming a"
         }
       ],
-      "stamp": "S-06"
+      "stamp": "S-06",
+      "result": "open"
     },
     {
       "id": "C-031",
@@ -889,7 +931,8 @@
           "symbol": "value={(data as Record<string, unknown>)[field.key]}"
         }
       ],
-      "stamp": "S-06"
+      "stamp": "S-06",
+      "result": "open"
     },
     {
       "id": "C-032",
@@ -903,7 +946,8 @@
           "symbol": "d.label ?? 'Button',"
         }
       ],
-      "stamp": "S-06"
+      "stamp": "S-06",
+      "result": "open"
     },
     {
       "id": "C-033",
@@ -921,7 +965,8 @@
           "symbol": "const parsed = definition.dataSchema.parse(strippedData ?? {})"
         }
       ],
-      "stamp": "S-06"
+      "stamp": "S-06",
+      "result": "open"
     },
     {
       "id": "C-034",
@@ -951,14 +996,15 @@
           "symbol": "\"migrate:import\": \"dotenv -e .env.local -- tsx scripts/migrate-import.ts\","
         }
       ],
-      "stamp": "S-06"
+      "stamp": "S-06",
+      "result": "open"
     },
     {
       "id": "C-035",
       "page": "gap-handoff.html",
       "location": "GAP-009 entry, problem and evidence",
-      "claim": "Both backup and restore scripts run set +x around credential-bearing commands and then set -x, turning tracing on for the rest of the script.",
-      "quote": "Both scripts run set +x around credential-bearing commands, then set -x",
+      "claim": "backup.sh runs set +x around its credential-bearing pg_dump and then set -x, turning tracing on for the rest of the script; restore.sh no longer re-enables tracing.",
+      "quote": "backup.sh runs set +x around its credential-bearing pg_dump, then set -x",
       "evidence": [
         {
           "path": "scripts/backup.sh",
@@ -974,14 +1020,25 @@
         }
       ],
       "stamp": "S-07",
-      "note": "MISMATCH: page says both scripts re-enable tracing with set -x; scripts/restore.sh has set +x (x3) and no set -x. scripts/backup.sh has set +x before pg_dump and set -x after it, as the page says."
+      "result": "changed",
+      "absent": [
+        {
+          "path": "scripts/restore.sh",
+          "symbol": "set -x"
+        }
+      ],
+      "closed_by": {
+        "commit": "1ab2405c377ef23b44238aecb2ff80d7f5f444da",
+        "path": "scripts/restore.sh"
+      },
+      "note": "CHANGED: the entry said both backup.sh and restore.sh run set +x and then set -x; restore.sh now runs set +x three times and never set -x, so the restore.sh half is closed and the entry is narrowed to backup.sh. Title \"Fix set -x re-enable in backup/restore scripts\" became \"Fix set -x re-enable in backup.sh\"; problem \"Both scripts run set +x around credential-bearing commands, then set -x\" became \"backup.sh runs set +x around its credential-bearing pg_dump, then set -x\"; the restore.sh evidence row \"same pattern around psql\" now says restore.sh is no longer affected; done-when and the index ledger summary name backup.sh only."
     },
     {
       "id": "C-036",
       "page": "gap-handoff.html",
       "location": "GAP-010 entry, problem and evidence",
       "claim": "first-run.md installs postgresql-18-pgvector while the runbook says postgresql-15-pgvector, and configuration.md has no entry for live keys DEFAULT_ORG_FEATURES, TRUSTED_PUBLISHERS or REQUIRE_PACK_SIGNATURES; firstrun.sh prints pnpm db:bootstrap for the first-admin step.",
-      "quote": "first-run.md installs postgresql-18-pgvector while the runbook says postgresql-15-pgvector",
+      "quote": "sudo apt-get install -y postgresql-18-pgvector",
       "evidence": [
         {
           "path": "docs/first-run.md",
@@ -1021,7 +1078,22 @@
         }
       ],
       "stamp": "S-07",
-      "note": "MISMATCH: page quotes first-run.md as apt-get install postgresql-18-pgvector; the file has sudo apt-get install -y postgresql-18-pgvector. The absence of the three keys from docs/configuration.md has no literal to cite; the src/lib/config.ts entries show they are live keys."
+      "result": "changed",
+      "absent": [
+        {
+          "path": "docs/configuration.md",
+          "symbol": "DEFAULT_ORG_FEATURES"
+        },
+        {
+          "path": "docs/configuration.md",
+          "symbol": "TRUSTED_PUBLISHERS"
+        },
+        {
+          "path": "docs/configuration.md",
+          "symbol": "REQUIRE_PACK_SIGNATURES"
+        }
+      ],
+      "note": "CHANGED: the first-run.md evidence row quoted \"apt-get install postgresql-18-pgvector\"; the file has \"sudo apt-get install -y postgresql-18-pgvector\", and the row now quotes it exactly."
     }
   ]
 }
