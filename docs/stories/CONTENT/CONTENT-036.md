@@ -29,7 +29,7 @@ bookkeeping in the same checkpoint rather than leave them in the backlog:
   `http://` and over `file://`.
 - **(c) CER-011, CER-012 and CER-017.** These are one lesson about spec-authoring, filed
   three times. They are recorded once, as a convention.
-- **(d) The backlog.** It gains four Do Later rows and a set of phase-dependency
+- **(d) The backlog.** It gains five Do Later rows and a set of phase-dependency
   annotations. The stale Do Now placeholder row is removed.
 
 No page, manifest or stamp changes.
@@ -72,9 +72,11 @@ prefix, and the Source, Date and Phase cells are unchanged.
 - CER-031 and CER-037 each name the other.
 
 **Rows.**
-- Four new open Do Later rows take the next free IDs (CER-045 to CER-048) with Phase `12`.
+- Five new open Do Later rows take the next free IDs (CER-045 to CER-049) with Phase `12`.
   One of them records that the Process supervision route's systemd units still point
-  `EnvironmentFile=` at `/etc/forqsite/env`, a file forqsite does not define.
+  `EnvironmentFile=` at `/etc/forqsite/env`, a file forqsite does not define. Another
+  records that GAP-013's fix text in `gap-handoff.html` runs `dotenv` without `-o`, while
+  `index.html`'s backup, cron and restore blocks use `dotenv -o`.
 - Do Now no longer has the `*(none)*` placeholder row. Do Much Later keeps its own.
 - No other row changes.
 
@@ -149,6 +151,13 @@ Forbidden proxy:
      CONTENT-034 fixed (CER-043). The units' own caption says `pnpm start` loads
      `.env.local` through dotenv regardless. Use the Source `CONTENT-034 spec-writer`
      for this row. Confirm the grep yourself before writing it.
+   - **GAP-013's fix text omits `-o`.** GAP-013's proposed fix in `gap-handoff.html` tells
+     forqsite to run `pnpm exec dotenv -e .env.local -- scripts/backup.sh`, without `-o`.
+     `index.html`'s own backup, cron and restore blocks (CONTENT-034) use
+     `dotenv -o -e .env.local`, because without `-o` a value already exported in the shell
+     wins over the file. forqsite's dotenv-cli help says `-o, --override  override system
+     variables`. The two documents disagree, and one of them should be reconciled in a
+     later content pass. Use the Source `CONTENT-035 reviewer` for this row.
 6. **Remove** the `| — | *(none)* | — | — | — |` row from Do Now only. Leave the file's
    "Last updated" line alone. Name no host, directory or URL of ours.
 
@@ -219,9 +228,12 @@ for i in O:
     else: assert N[i] == O[i], f'{i}: changed'
 fresh = [i for i in N if i not in O]
 dl = section(new, 'Do Later')
-assert len(fresh) == 4 and all(N[i] in dl and not closed(i) and '| 12 |' in N[i] for i in fresh), 'four open Do Later rows'
+assert len(fresh) == 5 and all(N[i] in dl and not closed(i) and '| 12 |' in N[i] for i in fresh), 'five open Do Later rows'
 assert 'EnvironmentFile=/etc/forqsite/env' in tpl, 'the systemd units no longer carry the line the row describes'
 assert sum('/etc/forqsite/env' in N[i] and 'EnvironmentFile' in N[i] and '1fda3228' in N[i] for i in fresh) == 1, 'no systemd EnvironmentFile row'
+gh, ix = open('gap-handoff.html').read(), open('index.html').read()
+assert 'dotenv -e .env.local -- scripts' in gh and 'dotenv -o -e .env.local' in ix, 'the -o disagreement the row describes is gone'
+assert sum('GAP-013' in N[i] and 'gap-handoff.html' in N[i] and '-o' in N[i] and 'CONTENT-035 reviewer' in N[i] for i in fresh) == 1, 'no GAP-013 dotenv -o row'
 assert int(min(fresh)[4:]) == max(int(i[4:]) for i in O) + 1, 'new rows do not take the next free IDs'
 assert '*(none)*' not in section(new, 'Do Now') and '*(none)*' in section(new, 'Do Much Later'), 'placeholder rows'
 # 3. docs/checkpoints.md: a cp-10 section, after cp-9 and before cp-11, and no cp-12 section
@@ -242,10 +254,10 @@ git diff $BASE -U0 -- docs/cer/backlog.md docs/checkpoints.md docs/ideology.md |
 echo DONE
 ```
 
-Pass means the script prints `ledger rows rendered: http=… file=…`, then `OK` with the four
+Pass means the script prints `ledger rows rendered: http=… file=…`, then `OK` with the five
 new IDs, then `DONE`, and exits 0. The reviewer also reads the cp-10 section against
 `docs/phases/phase-10.md` and the tag, figure by figure, and reads each new Do Later row
-for accuracy. For the systemd row, the reviewer checks the release-commit evidence against
+for accuracy, including the `-o` quotes in the GAP-013 row against both pages. For the systemd row, the reviewer checks the release-commit evidence against
 the clone.
 
 ## Out of scope

@@ -173,7 +173,7 @@ ran.
 - CER-005 is settled by rendering `index.html#pipeline` over `http://` and `file://`.
 - CER-011, CER-012 and CER-017 are recorded once as a spec-authoring convention in
   `docs/ideology.md`.
-- The backlog gains four Do Later rows and the Phase 13 and Phase 14 dependency
+- The backlog gains five Do Later rows and the Phase 13 and Phase 14 dependency
   annotations, and loses its stale Do Now placeholder.
 
 **Not done if** the cp-12 section is written here (the orchestrator writes it at tag time),
