@@ -253,9 +253,18 @@ this phase, record the management surface before the phase is checkpointed.
 
 ### CP-12 Cold-eyes checklist
 
-- [ ] written-never-read — does anything this phase persists have no reader?
-- [ ] required-never-written — does any read path depend on a value no writer produces?
-- [ ] duplicate state — is any fact now stored twice with independent writers?
-- [ ] half-implementation — is any branch unreachable, or any producer without its consumer?
+- [x] written-never-read — no. `docs/claims-manifest.json` is read by the Tests blocks of
+  CONTENT-031 to 036 and is the declared input of the Phase 13 checker. Every CER row this
+  phase added is read by the checkpoint guard or sits in a triaged backlog section.
+- [x] required-never-written — no. The `unverified`/marker path and the top-level `closed`
+  array are optional branches that no reader requires. Neither was exercised this phase;
+  CER-045 asks Phase 13 to fixture-test both before relying on them.
+- [x] duplicate state — one instance, deliberate. The release commit is recorded both in
+  the manifest's `release` object and in § Release commit above, and the manifest wins if
+  they disagree. The two agree at checkpoint.
+- [x] half-implementation — no unreachable branch or orphan producer. The manifest covers
+  stamped claims only, so copyable command blocks sit outside it. That is a scope boundary,
+  recorded as CER-046, not a half-built path.
 
-— developer fills in after phase completion —
+Filled in at CP-12, 2026-09-25, from the CP-12 intent review's answers, re-checked against
+the tree after CONTENT-037.

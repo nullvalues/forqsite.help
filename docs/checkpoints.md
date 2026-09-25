@@ -199,4 +199,62 @@ phase names: "the gates are green" stood in for "the site is what we committed."
 
 ---
 
+## cp-12
+
+**Phase:** 12 — One stamp per release: re-verify every published claim against one forqsite commit
+**Tag command:** `git tag cp-12 && git push origin main --tags`
+
+**Release commit:** `nullvalues/forqsite@1fda3228322d5ad779f44c321c4013ccd247b3fa`,
+committed 2026-09-24. Both pages now carry this one commit in every stamp.
+
+**Acceptance:** all 8 stories are complete: CONTENT-030 to CONTENT-037. The phase grew
+twice.
+- **Planned (CONTENT-030 to 032).** CONTENT-030 built the claims manifest, and CONTENT-031
+  and 032 re-verified and restamped every stamped claim. CONTENT-030 failed review twice,
+  on evidence the builder described rather than located. A loop-breaker traced both
+  failures to the spec. After the spec was amended to require verbatim `git grep -F` hits
+  at the release commit, the story passed on its third attempt.
+- **First growth (CONTENT-033).** The `cer-do-now` guard refused the checkpoint on
+  CER-038, a published restore command missing an argument that forqsite now requires. The
+  operator added CONTENT-033, which folded in two more corrections to text no stamp covers
+  (CER-039, CER-040).
+- **Second growth (CONTENT-034 to 037).** The first security gate's advisories went through
+  a cold cross-corpus triage and two independent designs. That gave CONTENT-034 (backup,
+  cron and restore blocks now run under forqsite's own `dotenv` loader), CONTENT-035
+  (GAP-013 and GAP-014 for upstream defects), and CONTENT-036 (the cp-10 record, CER-005
+  closed as a wrong-route artifact, the spec-authoring convention in `docs/ideology.md`,
+  and backlog grooming). The security re-run then found operator-local absolute paths in
+  tracked docs, which CONTENT-037 scrubbed.
+
+CONTENT-032, 035 and 036 each reached the builder with a defect in their own Tests block,
+two of them whole-line scans over pre-existing text. Each defect was fixed in the story's
+spec before review.
+
+**Gates:** re-run against the final tree, because CONTENT-034 to 036 changed published
+commands after the first verdicts.
+- security PASS (opus). Two LOW advisories were filed as CER-051 and as a note on CER-049,
+  and the path leak was fixed by CONTENT-037.
+- docs PASS.
+- intent ALIGNED.
+- dark-feature-scan PASS.
+
+**Drift check, before the tag.** Main at `cdce820` was deployed on 2026-09-25.
+CONTENT-037 changed docs only; the page bytes at the tag commit are identical to
+`cdce820`. The check was run at the tag candidate, exit 0:
+
+```
+ref                656c7f4545bd8e2df60c013ca21c9caee95100e6  656c7f4 "chore(merge-status): sync story/phase status after merge"
+index.html          ok  6e23ac136b2691b3331e8f849a1ded0fa07643e12beb916ae3202be8fa82f335
+gap-handoff.html    ok  f1e7917060c12993138816192da576e75c1a97f7539a9e8307dba7d1849fea4f
+nginx.conf          not served — bind-mounted only; no request returns its bytes, so this check cannot cover it
+provenance         claims cdce820 deployed 2026-09-25T16:13:41Z  (claim, not the basis of the result above)
+result             ok — served bytes match the ref for all 2 bundles
+```
+
+**Lesson recorded:** every content finding this phase surfaced late sat in text that no
+stamp covers, and each was found incidentally, never by the re-verification. The
+manifest's scope defines what the phase can see. CER-046 carries that into Phase 13.
+
+---
+
 _(Add a checkpoint section for each phase. Tag only after full checkpoint sequence passes.)_
