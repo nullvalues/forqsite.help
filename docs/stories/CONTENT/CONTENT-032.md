@@ -2,7 +2,7 @@
 id: CONTENT-032
 rail: CONTENT
 title: Re-verify and restamp every remaining claim, and pin the pages to one release commit
-status: draft
+status: complete
 phase: "12"
 story_class: doc
 auth_gated: false
