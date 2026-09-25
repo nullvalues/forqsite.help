@@ -2,7 +2,7 @@
 id: CONTENT-037
 rail: CONTENT
 title: Scrub operator-local absolute paths from tracked docs, and record the cp-12 security findings
-status: draft
+status: complete
 phase: "12"
 story_class: doc
 auth_gated: false

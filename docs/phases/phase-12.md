@@ -71,7 +71,7 @@ ever disagree, the manifest wins.
 | CONTENT-034 | Replace env parsing in the backup, cron and restore blocks with forqsite's own loader | complete |
 | CONTENT-035 | New GAP entries for the upstream backup/restore defects found during Phase 12 | complete |
 | CONTENT-036 | Checkpoint bookkeeping and backlog grooming pulled into cp-12 | complete |
-| CONTENT-037 | Scrub operator-local absolute paths from tracked docs, and record the cp-12 security findings | draft |
+| CONTENT-037 | Scrub operator-local absolute paths from tracked docs, and record the cp-12 security findings | complete |
 
 ### CONTENT-030 — The claims manifest
 
