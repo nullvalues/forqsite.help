@@ -71,6 +71,7 @@ ever disagree, the manifest wins.
 | CONTENT-034 | Replace env parsing in the backup, cron and restore blocks with forqsite's own loader | complete |
 | CONTENT-035 | New GAP entries for the upstream backup/restore defects found during Phase 12 | complete |
 | CONTENT-036 | Checkpoint bookkeeping and backlog grooming pulled into cp-12 | complete |
+| CONTENT-037 | Scrub operator-local absolute paths from tracked docs, and record the cp-12 security findings | draft |
 
 ### CONTENT-030 — The claims manifest
 
@@ -179,6 +180,22 @@ ran.
 **Not done if** the cp-12 section is written here (the orchestrator writes it at tag time),
 or either page changes.
 
+### CONTENT-037 — Name the class, not the host, before the tag
+
+The CP-12 security re-audit found operator-local absolute paths in tracked docs: the local
+forqsite clone's path, this repository's own path, and a path on the original build machine.
+They appear in four planning docs and 22 completed story specs. The operator decided on
+2026-09-25 to scrub them before tagging cp-12.
+
+**Done when** no tracked file names any of those paths or their parent directory. Each is
+replaced by its class: `$FORQSITE_CLONE` or "the local forqsite clone", the repository root,
+`file://$PWD/…`, or a description of the build machine. Each edited line keeps its meaning.
+The leak is recorded as a resolved CER described by class only. The copy-paste U+200B wart
+gets a Do Later row, and CER-049 gets the backup caption's `DATABASE_URL` note.
+
+**Not done if** the flex tooling path changes, a line changes beyond its identifier, a page or
+the manifest changes, or this story's own text names what it scrubs.
+
 ## Story ordering
 
 CONTENT-030 runs first, because both later stories work from its manifest and the pinned
@@ -192,6 +209,9 @@ checkpoint, in the order 034 → 035 → 036. Each merges before the next branch
 edits the caption and the `index.html` ledger after CONTENT-034 has rewritten that route.
 CONTENT-036 counts on the backlog IDs the two before it assigned. The post-merge deploy step
 from CONTENT-032 runs once, after CONTENT-036 merges.
+
+CONTENT-037 runs after CONTENT-036 and before the cp-12 checkpoint. It takes the backlog IDs after
+the ones CONTENT-036 assigned, and it changes no page, so the deploy step is unaffected.
 
 ## After this phase: the path to automatic releases
 
