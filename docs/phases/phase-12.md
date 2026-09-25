@@ -67,7 +67,7 @@ ever disagree, the manifest wins.
 | CONTENT-030 | Inventory every stamped claim into a committed claims manifest | complete |
 | CONTENT-031 | Re-verify and restamp the Known gaps list in both pages | complete |
 | CONTENT-032 | Re-verify and restamp every remaining claim, and pin the pages to one release commit | complete |
-| CONTENT-033 | Correct the restore example, its row-count comment and the prestart-drift sentence in index.html | draft |
+| CONTENT-033 | Correct the restore example, its row-count comment and the prestart-drift sentence in index.html | complete |
 
 ### CONTENT-030 — The claims manifest
 

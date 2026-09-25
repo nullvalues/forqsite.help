@@ -2,7 +2,7 @@
 id: CONTENT-033
 rail: CONTENT
 title: Correct the restore example, its row-count comment and the prestart-drift sentence in index.html
-status: draft
+status: complete
 phase: "12"
 story_class: doc
 auth_gated: false
