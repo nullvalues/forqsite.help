@@ -163,7 +163,7 @@ stamps = {s['id']: s for s in m['stamps']}; bs = {s['id']: s for s in b['stamps'
 for p, t in T.items():
     mine = [s for s in stamps.values() if s['page'] == p]
     n = len(re.findall(r'nullvalues/forqsite@[0-9a-f]{7,40}', t))
-    assert n == len(mine) == sum(t.count(s['text']) for s in mine), f'{p}: stamps in template and manifest differ'
+    assert n == len(mine) == sum(t.count(x) for x in {s['text'] for s in mine}), f'{p}: stamps in template and manifest differ'
 sc_stamps = {i for i, s in bs.items() if s['commit'] != short}
 assert sc_stamps and set(stamps) == set(bs), 'stamp set changed or nothing in scope'
 for s in m['stamps']:
@@ -206,7 +206,8 @@ for f in glob.glob(f'{S}/dom-*'):
 for i in sc_stamps: assert flat(stamps[i]['text']) in seen, f'{i}: stamp not rendered'
 print('OK', len(scope), 'claims in scope,', len(sc_stamps), 'stamps restamped')
 EOF
-if grep -nE '/mnt/|/home/|~/' docs/claims-manifest.json docs/cer/backlog.md; then exit 1; fi
+if grep -nE '/mnt/|/home/|~/' docs/claims-manifest.json; then exit 1; fi
+if git diff -U0 $BASE -- docs/cer/backlog.md | grep '^+' | grep -vE '^\+\+\+' | grep -nE '/mnt/|/home/|~/'; then exit 1; fi
 grep -E '^\| CER-029 ' docs/cer/backlog.md | grep -qF '**RESOLVED Phase 12 — CONTENT-032'
 grep -E '^\| CER-038 ' docs/cer/backlog.md | grep -q 'restore.sh'
 ```

@@ -19,36 +19,36 @@
       "id": "S-02",
       "page": "index.html",
       "location": "Operations (Day-two runbook) route, footer of the \"Upgrade\" section",
-      "text": "verified 2026-09-19 against nullvalues/forqsite@7089b9dc",
-      "commit": "7089b9dc",
-      "date": "2026-09-19",
+      "text": "verified 2026-09-24 against nullvalues/forqsite@1fda3228",
+      "commit": "1fda3228",
+      "date": "2026-09-24",
       "scope": "Section footer: the \"Upgrade\" section, back to its h2 heading. Reading taken: the callout above that heading (a pointer to the Backup & recovery route) is navigation, not a claim, and is not covered."
     },
     {
       "id": "S-03",
       "page": "index.html",
       "location": "Operations (Day-two runbook) route, footer of the \"Provider packs (condensed)\" section",
-      "text": "verified 2026-09-18 against nullvalues/forqsite@7089b9dc",
-      "commit": "7089b9dc",
-      "date": "2026-09-18",
+      "text": "verified 2026-09-24 against nullvalues/forqsite@1fda3228",
+      "commit": "1fda3228",
+      "date": "2026-09-24",
       "scope": "Section footer: the \"Provider packs (condensed)\" section, back to its h2 heading (the previous stamp closes the Upgrade section)."
     },
     {
       "id": "S-04",
       "page": "index.html",
       "location": "Promoting a change route, footer of the page (after \"Which collapses are safe\")",
-      "text": "verified 2026-09-21 against nullvalues/forqsite@7089b9dc",
-      "commit": "7089b9dc",
-      "date": "2026-09-21",
+      "text": "verified 2026-09-24 against nullvalues/forqsite@1fda3228",
+      "commit": "1fda3228",
+      "date": "2026-09-24",
       "scope": "Reading taken: a page footer covering the whole Promoting a change route, not only its last h2 section. It is the only stamp on that route, it sits after the closing paragraph with extra spacing, and the page is one argument whose forqsite facts sit in its earlier sections. Advice to the operator (which environments to collapse) is not a forqsite claim and is not listed."
     },
     {
       "id": "S-05",
       "page": "gap-handoff.html",
       "location": "Intro, third paragraph (the ordering assumption), inline",
-      "text": "Verified 2026-09-16 against <span style=\"font-family:'Geist Mono',monospace; font-size:13px;\">nullvalues/forqsite@17b78645</span>",
-      "commit": "17b78645",
-      "date": "2026-09-16",
+      "text": "Verified 2026-09-24 against <span style=\"font-family:'Geist Mono',monospace; font-size:13px;\">nullvalues/forqsite@1fda3228</span>",
+      "commit": "1fda3228",
+      "date": "2026-09-24",
       "scope": "Inline stamp: its own paragraph, the ordering assumption that production stays non-docker. Reading taken: it does not extend to the TL;DR ordering below it or to the GAP entries, which the footer stamp covers."
     },
     {
@@ -246,8 +246,8 @@
       "id": "C-002",
       "page": "index.html",
       "location": "Operations route, \"Upgrade\" section, paragraph after \"EVERY MIGRATION MUST BE READABLE BY THE PREVIOUS VERSION\"",
-      "claim": "Migrations are numbered SQL files applied in journal order by pnpm db:migrate (drizzle-kit migrate), with no down step: 95 forward .sql files under src/db/migrations, ordered by meta/_journal.json, no down file, and no rollback script in package.json.",
-      "quote": "there is no down step: 95 forward",
+      "claim": "Migrations are numbered SQL files applied in journal order by pnpm db:migrate (drizzle-kit migrate), with no down step: 100 forward .sql files under src/db/migrations, ordered by meta/_journal.json, no down file, and no rollback script in package.json.",
+      "quote": "there is no down step: 100 forward",
       "evidence": [
         {
           "path": "package.json",
@@ -259,7 +259,21 @@
         }
       ],
       "stamp": "S-02",
-      "note": "MISMATCH: page says there are 95 forward .sql files under src/db/migrations; at the release commit that directory holds 100 .sql files (journal tags run to 0099_retire_backup_corr048_paragraph_content). A file count has no single-line literal, so the cited journal tag is the last entry, not the count."
+      "result": "changed",
+      "absent": [
+        {
+          "path": "package.json",
+          "symbol": "rollback"
+        }
+      ],
+      "counts": [
+        {
+          "path": "src/db/migrations",
+          "suffix": ".sql",
+          "n": 100
+        }
+      ],
+      "note": "CHANGED: the paragraph said \"95 forward .sql files under src/db/migrations\"; at the release commit that directory holds 100 .sql files, one per journal entry (the last tagged 0099_retire_backup_corr048_paragraph_content), so it now says \"100 forward .sql files\"."
     },
     {
       "id": "C-003",
@@ -289,14 +303,15 @@
           "symbol": "DROP TABLE IF EXISTS \"platform_admins\" CASCADE;"
         }
       ],
-      "stamp": "S-02"
+      "stamp": "S-02",
+      "result": "open"
     },
     {
       "id": "C-004",
       "page": "index.html",
       "location": "Operations route, \"Upgrade\" section, under \"A MISSED MIGRATION DOES NOT STOP A START\"",
-      "claim": "prestart runs a migration check that prints a [WARN] line and always exits 0, and it compares only tables that migrations create, so a missed column-adding migration passes silently; the line to look for is check-migrations in the process log.",
-      "quote": "runs a migration check that prints a",
+      "claim": "prestart runs two migration checks and both always exit 0: the table check prints a [WARN] line and compares only tables that migrations create, so a missed column-adding migration passes it silently; the advisory ledger check reports each journal migration with no applied-ledger record as an unrecorded finding; both checks' log lines contain check-migration.",
+      "quote": "runs two migration checks, and both always exit 0",
       "evidence": [
         {
           "path": "package.json",
@@ -313,9 +328,31 @@
         {
           "path": "scripts/check-migrations.ts",
           "symbol": "[WARN] check-migrations:"
+        },
+        {
+          "path": "package.json",
+          "symbol": "tsx scripts/check-migration-hashes.ts --advisory\""
+        },
+        {
+          "path": "scripts/check-migration-hashes.ts",
+          "symbol": "`--advisory` (used only by `prestart`) always"
+        },
+        {
+          "path": "scripts/check-migration-hashes.ts",
+          "symbol": "exits 0 after printing — RBAC-026 E12: a bookkeeping fact must not block `pnpm start`."
+        },
+        {
+          "path": "scripts/check-migration-hashes.ts",
+          "symbol": "`[check-migration-hashes] ${suppressed ? 'SUPPRESSED' : 'FINDING'} ${finding.condition}${flag} ${identity}` +"
+        },
+        {
+          "path": "scripts/migration-ledger.ts",
+          "symbol": " * takes precedence — the file must exist to compute a divergence), `unrecorded` (file exists, no"
         }
       ],
-      "stamp": "S-02"
+      "stamp": "S-02",
+      "result": "changed",
+      "note": "CHANGED: the paragraph said prestart \"runs a migration check that prints a [WARN] line and then always exits 0\" and pointed at \"grep check-migrations\"; prestart now also runs scripts/check-migration-hashes.ts --advisory, which reports a journal migration with no applied-ledger record as an unrecorded finding and still exits 0. The paragraph now says prestart \"runs two migration checks, and both always exit 0\", describes the ledger check's unrecorded finding, and greps for \"check-migration\", which matches both checks' log lines. The table check's blind spot for column-adding migrations is unchanged."
     },
     {
       "id": "C-005",
@@ -341,7 +378,8 @@
           "symbol": " * A parse failure rejects the whole save with `invalid_data` — never a per-block"
         }
       ],
-      "stamp": "S-03"
+      "stamp": "S-03",
+      "result": "open"
     },
     {
       "id": "C-006",
@@ -371,7 +409,8 @@
           "symbol": "return storageGet(ctx.organisationId, ctx.providerId, ctx.tenantId, key)"
         }
       ],
-      "stamp": "S-03"
+      "stamp": "S-03",
+      "result": "open"
     },
     {
       "id": "C-007",
@@ -389,7 +428,8 @@
           "symbol": "made from your `aaac.generate` land in the wrong namespace. This is a real cross-provider"
         }
       ],
-      "stamp": "S-03"
+      "stamp": "S-03",
+      "result": "open"
     },
     {
       "id": "C-008",
@@ -415,7 +455,8 @@
           "symbol": "log(level: 'info' | 'warn' | 'error', message: string, data?: Record<string, unknown>): void {"
         }
       ],
-      "stamp": "S-03"
+      "stamp": "S-03",
+      "result": "open"
     },
     {
       "id": "C-009",
@@ -429,7 +470,8 @@
           "symbol": "CREATE TABLE provider_storage ("
         }
       ],
-      "stamp": "S-03"
+      "stamp": "S-03",
+      "result": "open"
     },
     {
       "id": "C-010",
@@ -451,7 +493,8 @@
           "symbol": "transpilePackages: deriveTranspilePackages(readManifestModules(providerManifestPath)),"
         }
       ],
-      "stamp": "S-03"
+      "stamp": "S-03",
+      "result": "open"
     },
     {
       "id": "C-011",
@@ -465,7 +508,8 @@
           "symbol": " * validated provider list. The result is memoised for the process lifetime."
         }
       ],
-      "stamp": "S-03"
+      "stamp": "S-03",
+      "result": "open"
     },
     {
       "id": "C-012",
@@ -487,7 +531,8 @@
           "symbol": "if (visibility === 'private') {"
         }
       ],
-      "stamp": "S-03"
+      "stamp": "S-03",
+      "result": "open"
     },
     {
       "id": "C-013",
@@ -513,7 +558,8 @@
           "symbol": "env: 'FORQSITE_REVOKED_SIGNATURES',"
         }
       ],
-      "stamp": "S-03"
+      "stamp": "S-03",
+      "result": "open"
     },
     {
       "id": "C-014",
@@ -539,7 +585,8 @@
           "symbol": "await client.bucketExists(bucket)"
         }
       ],
-      "stamp": "S-03"
+      "stamp": "S-03",
+      "result": "open"
     },
     {
       "id": "C-015",
@@ -561,7 +608,8 @@
           "symbol": "const rejections = getLastLoadRejections()"
         }
       ],
-      "stamp": "S-03"
+      "stamp": "S-03",
+      "result": "open"
     },
     {
       "id": "C-016",
@@ -579,7 +627,8 @@
           "symbol": "pnpm generate:registries"
         }
       ],
-      "stamp": "S-03"
+      "stamp": "S-03",
+      "result": "open"
     },
     {
       "id": "C-017",
@@ -591,9 +640,19 @@
         {
           "path": "next.config.mjs",
           "symbol": "process.env.PROVIDER_MANIFEST_PATH ?? path.resolve(process.cwd(), 'config/providers.json')"
+        },
+        {
+          "path": ".gitignore",
+          "symbol": "# Provider manifest — operator-local, not committed"
         }
       ],
       "stamp": "S-04",
+      "result": "open",
+      "absent": [
+        {
+          "path": "config/providers.json"
+        }
+      ],
       "note": "config/providers.json is not committed in the forqsite repository (config/providers.example.json is); the cited literal is where the build resolves the manifest path."
     },
     {
@@ -608,7 +667,8 @@
           "symbol": "\"db:migrate\": \"dotenv -e .env.local -- drizzle-kit migrate\","
         }
       ],
-      "stamp": "S-04"
+      "stamp": "S-04",
+      "result": "open"
     },
     {
       "id": "C-019",
@@ -622,7 +682,8 @@
           "symbol": "`render` falls through to its null-or-default path. Nothing rewrites stored data. Renaming a"
         }
       ],
-      "stamp": "S-04"
+      "stamp": "S-04",
+      "result": "open"
     },
     {
       "id": "C-020",
@@ -636,7 +697,8 @@
           "symbol": "@forqsite-packs:registry=https://packs.forqsite.dev/packs/"
         }
       ],
-      "stamp": "S-04"
+      "stamp": "S-04",
+      "result": "open"
     },
     {
       "id": "C-021",
@@ -650,7 +712,8 @@
           "symbol": "  - src/block-providers/core"
         }
       ],
-      "stamp": "S-04"
+      "stamp": "S-04",
+      "result": "open"
     },
     {
       "id": "C-022",
@@ -666,10 +729,44 @@
         {
           "path": "docs/first-run.md",
           "symbol": "| MinIO | any | Remote S3-compatible instance; bucket must already exist |"
+        },
+        {
+          "path": "docs/operator-runbook.md",
+          "symbol": "**Network access.** PostgreSQL and MinIO must be reachable from the forqsite Node.js"
+        },
+        {
+          "path": "docs/operator-runbook.md",
+          "symbol": "pm2 restart forqsite   # or your process manager"
+        },
+        {
+          "path": "docs/architecture.md",
+          "symbol": "It is **opt-in**, enabled via `FORQSITE_ROLLING_RESTART=true` (documented in"
+        },
+        {
+          "path": "docs/architecture.md",
+          "symbol": "deploys when enabled. Single-instance, maintenance-window installs remains the"
+        },
+        {
+          "path": "docker-compose.yml",
+          "symbol": "# docker-compose.yml — forqsite single-instance deployment"
         }
       ],
       "stamp": "S-05",
-      "note": "The non-docker production premise is this page's own ordering assumption; no file in the forqsite repository designates production as non-docker. The cited literals are the first-run prerequisites that treat Postgres and MinIO as remote instances."
+      "result": "open",
+      "absent": [
+        {
+          "path": "Dockerfile"
+        },
+        {
+          "path": "docs/deployment/docker-compose.rolling.yml",
+          "symbol": "postgres"
+        },
+        {
+          "path": "docs/deployment/docker-compose.rolling.yml",
+          "symbol": "minio"
+        }
+      ],
+      "note": "The non-docker production premise is this page's own ordering assumption; no file in the forqsite repository designates production as non-docker. Re-checked at the release commit as \"forqsite's production documentation still treats Postgres and MinIO as network services and compose as a development convenience\". It holds: the first-run prerequisites and the runbook require Postgres and MinIO as network services reached over TCP/IP; the runbook's install and standard upgrade are pnpm build, pnpm start and a process-manager restart, not docker; architecture.md keeps single-instance installs the default and the rolling restart opt-in. The only docker production path is that opt-in rolling topology (docs/deployment/docker-compose.rolling.yml driven by scripts/rolling-restart.sh), which runs the application containers only, declares no Postgres or MinIO service, and cannot build because the repository has no Dockerfile. One discrepancy is recorded rather than hidden: the root docker-compose.yml calls itself \"forqsite single-instance deployment\", while no install or upgrade document routes an operator through it; \"compose as a dev convenience\" is the rescoping the gap list proposes, not forqsite's wording. The runbook's docker references are unchanged in count since the previous stamp's commit, so nothing moved toward docker and the gap ordering needs no re-sequencing."
     },
     {
       "id": "C-023",
