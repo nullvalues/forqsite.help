@@ -67,6 +67,7 @@ ever disagree, the manifest wins.
 | CONTENT-030 | Inventory every stamped claim into a committed claims manifest | complete |
 | CONTENT-031 | Re-verify and restamp the Known gaps list in both pages | complete |
 | CONTENT-032 | Re-verify and restamp every remaining claim, and pin the pages to one release commit | complete |
+| CONTENT-033 | Correct the restore example, its row-count comment and the prestart-drift sentence in index.html | draft |
 
 ### CONTENT-030 — The claims manifest
 
@@ -109,11 +110,32 @@ provenance line then names the release commit's deploy.
 **Not done if** a claim that could not be verified keeps a fresh stamp. It is marked as
 unverified, with the reason, instead.
 
+### CONTENT-033 — Three unstamped corrections before checkpoint
+
+The cp-12 gate refused because CER-038 is in Do Now. The operator decided on 2026-09-25 to fix
+it inside this phase as a correction story, together with a second stale sentence that
+CONTENT-032's builder found. The operator then widened it (2026-09-25) to a third stale line
+in the same restore block, found while the story was being specced.
+
+**Done when** the Backup & recovery restore example calls `scripts/restore.sh` the way its
+usage line reads at the release commit, including the mandatory expected-database-name
+argument. The block's row-count comment names the tables `restore.sh` actually counts at
+that commit (`tenants`, not `sub_tenants`). The Incidents entry no longer says the prestart
+check refuses to boot on drift: at the release commit both prestart migration checks are
+advisory and exit 0. CER-038 is resolved. The prestart sentence is recorded as CER-039 and
+the row-count comment as CER-040, and both are resolved with it.
+
+**Not done if** anything else on either page changes, a stamp or the manifest changes (all three
+passages are unstamped, and the manifest lists stamped claims only), or the argument names
+or table names are written from memory rather than taken from the script.
+
 ## Story ordering
 
 CONTENT-030 runs first, because both later stories work from its manifest and the pinned
 commit it records. CONTENT-031 and CONTENT-032 both edit both pages, so they run one after
-the other, CONTENT-031 first. Each merges before the next branches.
+the other, CONTENT-031 first. Each merges before the next branches. CONTENT-033 runs after
+CONTENT-032 and before the cp-12 checkpoint. It edits `index.html`, which CONTENT-032 edited
+last, and it clears the Do Now finding that blocked the gate.
 
 ## After this phase: the path to automatic releases
 
