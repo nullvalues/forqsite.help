@@ -65,7 +65,7 @@ ever disagree, the manifest wins.
 | ID | Title | Status |
 |----|-------|--------|
 | CONTENT-030 | Inventory every stamped claim into a committed claims manifest | complete |
-| CONTENT-031 | Re-verify and restamp the Known gaps list in both pages | draft |
+| CONTENT-031 | Re-verify and restamp the Known gaps list in both pages | complete |
 | CONTENT-032 | Re-verify and restamp every remaining claim, and pin the pages to one release commit | draft |
 
 ### CONTENT-030 — The claims manifest

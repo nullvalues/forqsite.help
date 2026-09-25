@@ -2,7 +2,7 @@
 id: CONTENT-031
 rail: CONTENT
 title: Re-verify and restamp the Known gaps list in both pages
-status: draft
+status: complete
 phase: "12"
 story_class: doc
 auth_gated: false
