@@ -68,6 +68,9 @@ ever disagree, the manifest wins.
 | CONTENT-031 | Re-verify and restamp the Known gaps list in both pages | complete |
 | CONTENT-032 | Re-verify and restamp every remaining claim, and pin the pages to one release commit | complete |
 | CONTENT-033 | Correct the restore example, its row-count comment and the prestart-drift sentence in index.html | complete |
+| CONTENT-034 | Replace env parsing in the backup, cron and restore blocks with forqsite's own loader | draft |
+| CONTENT-035 | New GAP entries for the upstream backup/restore defects found during Phase 12 | draft |
+| CONTENT-036 | Checkpoint bookkeeping and backlog grooming pulled into cp-12 | draft |
 
 ### CONTENT-030 — The claims manifest
 
@@ -129,6 +132,53 @@ the row-count comment as CER-040, and both are resolved with it.
 passages are unstamped, and the manifest lists stamped claims only), or the argument names
 or table names are written from memory rather than taken from the script.
 
+### CONTENT-034 — Run the backup, cron and restore blocks under forqsite's own loader
+
+cp-12's gates passed. A cold cross-corpus triage by two independent readers, followed by two
+independent designs, then found three Backup & recovery blocks that fail at the release
+commit. The backup and restore blocks grep `.env.local`, and against the shipped example that
+returns four lines. The restore block targets a database that its `DATABASE_URL` does not
+name. The cron line sources a file that forqsite never defines. The operator chose the fix
+on 2026-09-25: run each script under dotenv-cli, which forqsite ships and uses for its own
+`start` and `db:migrate`.
+
+**Done when** the three blocks, run in a scratch checkout built from the release's own
+`.env.local.example` with a stale `DATABASE_URL` already exported, hand the scripts exactly
+the file's values. The restore block also says how the target is chosen, and the cron block
+says what it assumes about `PATH`. The three findings are recorded as CER-041 to CER-043
+and resolved.
+
+**Not done if** the blocks are checked by reading them instead of running them, or anything
+outside the backup and restore sections, a stamp or the manifest changes.
+
+### CONTENT-035 — The same defects upstream, as Known gaps
+
+forqsite's runbook uses the same grep line, and `backup.sh` passes the database URL, password
+included, in `pg_dump`'s argv, while its own header says it does not. The tracing half of
+the `backup.sh` finding is already GAP-009, so it is not repeated.
+
+**Done when** two new GAP entries, in both pages, describe the class of each defect, and
+each defect has been shown by running forqsite's own files at the release commit. Each entry
+has an `added` manifest claim, and the Known-gaps union is recomputed. The Backup & recovery
+caption no longer repeats the script's "never on the command line" promise (CER-044).
+
+**Not done if** a stamp changes, GAP-009 is duplicated, or an entry claims an effect nobody
+ran.
+
+### CONTENT-036 — Bookkeeping and grooming before the tag
+
+**Done when**:
+- `docs/checkpoints.md` has a cp-10 section written from the tag and the phase-10 record,
+  labelled as written after the fact (CER-032).
+- CER-005 is settled by rendering `index.html#pipeline` over `http://` and `file://`.
+- CER-011, CER-012 and CER-017 are recorded once as a spec-authoring convention in
+  `docs/ideology.md`.
+- The backlog gains four Do Later rows and the Phase 13 and Phase 14 dependency
+  annotations, and loses its stale Do Now placeholder.
+
+**Not done if** the cp-12 section is written here (the orchestrator writes it at tag time),
+or either page changes.
+
 ## Story ordering
 
 CONTENT-030 runs first, because both later stories work from its manifest and the pinned
@@ -136,6 +186,12 @@ commit it records. CONTENT-031 and CONTENT-032 both edit both pages, so they run
 the other, CONTENT-031 first. Each merges before the next branches. CONTENT-033 runs after
 CONTENT-032 and before the cp-12 checkpoint. It edits `index.html`, which CONTENT-032 edited
 last, and it clears the Do Now finding that blocked the gate.
+
+CONTENT-034, CONTENT-035 and CONTENT-036 run after CONTENT-033 and before the cp-12
+checkpoint, in the order 034 → 035 → 036. Each merges before the next branches. CONTENT-035
+edits the caption and the `index.html` ledger after CONTENT-034 has rewritten that route.
+CONTENT-036 counts on the backlog IDs the two before it assigned. The post-merge deploy step
+from CONTENT-032 runs once, after CONTENT-036 merges.
 
 ## After this phase: the path to automatic releases
 
