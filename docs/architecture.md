@@ -32,7 +32,7 @@ the deployment either); no database
 ## Era and phase currency
 
 Current era: `001` — `docs/eras/001-initial.md`
-Current phase: 11 — Make the deploy repeatable, and make drift visible
+Current phase: 12 — One stamp per release: re-verify every published claim against one forqsite commit
 
 `docs/phases/index.md` is the source of truth for phase status. The two lines above
 and below are pointers into that record, not a second copy of it.

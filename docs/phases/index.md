@@ -25,7 +25,7 @@ Each phase has a dedicated file in `docs/phases/`.
 | 9 | Close CP-8: the defect the checklist missed, and the wiring that predates the convention | complete | — | [phase-9.md](phase-9.md) |
 | 10 | Name the class, not the instance — and close the backlog by resolving, never deleting | complete | — | [phase-10.md](phase-10.md) |
 | 11 | Make the deploy repeatable, and make drift visible | complete | — | [phase-11.md](phase-11.md) |
-| 12 | One stamp per release: re-verify every published claim against one forqsite commit | planned | — | [phase-12.md](phase-12.md) |
+| 12 | One stamp per release: re-verify every published claim against one forqsite commit | complete | — | [phase-12.md](phase-12.md) |
 
 
 ## Backlog promotions
