@@ -2,7 +2,7 @@
 id: CONTENT-036
 rail: CONTENT
 title: Checkpoint bookkeeping and backlog grooming pulled into cp-12
-status: draft
+status: complete
 phase: "12"
 story_class: doc
 auth_gated: false

@@ -70,7 +70,7 @@ ever disagree, the manifest wins.
 | CONTENT-033 | Correct the restore example, its row-count comment and the prestart-drift sentence in index.html | complete |
 | CONTENT-034 | Replace env parsing in the backup, cron and restore blocks with forqsite's own loader | complete |
 | CONTENT-035 | New GAP entries for the upstream backup/restore defects found during Phase 12 | complete |
-| CONTENT-036 | Checkpoint bookkeeping and backlog grooming pulled into cp-12 | draft |
+| CONTENT-036 | Checkpoint bookkeeping and backlog grooming pulled into cp-12 | complete |
 
 ### CONTENT-030 — The claims manifest
 
