@@ -2,7 +2,7 @@
 id: CONTENT-035
 rail: CONTENT
 title: New GAP entries for the upstream backup/restore defects found during Phase 12
-status: draft
+status: complete
 phase: "12"
 story_class: doc
 auth_gated: false
