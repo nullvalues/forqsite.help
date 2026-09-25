@@ -112,6 +112,42 @@ scope, but the two blocking docs findings alone did not warrant it.
 
 ---
 
+## cp-10
+
+*Written after the fact, on 2026-09-25 (CONTENT-036), from the `cp-10` tag and the
+phase-10 record, because this section was missed at tag time (CER-032). It states only
+what those two sources record.*
+
+**Phase:** 10 — Name the class, not the instance — and close the backlog by resolving, never deleting
+**Tag command:** `git tag cp-10` — a lightweight tag on `f4e4e5c` ("chore(cp-10): mark
+phase 10 complete and stamp the phase pointer"), 2026-09-21. The push command is not
+recorded.
+
+**Acceptance:** All 5 stories complete (CONTENT-023..027), per the phase-10 Stories
+table. CONTENT-023 brought the backlog's resolution-marker convention current;
+CONTENT-024 recorded name-the-class-not-the-instance as an accepted constraint and
+generalised our infrastructure identifiers out of the four files that carried them;
+CONTENT-025 moved the build-tooling audit out of this repository and referred the flex
+defect; CONTENT-026 recorded the publication policy and the phases 3-7 ruling;
+CONTENT-027 closed CER-001 as superseded and corrected CER-005's evidence.
+
+**Gates:** filled in at CP-10, 2026-09-21. security PASS, intent ALIGNED, docs PASS
+after one remediation (`15967e2`, which recorded the mid-row redaction exception so the
+checklist could be answered honestly), dark-feature scan 0 findings. No drift check is
+recorded for this checkpoint.
+
+**The phase's most important result, as recorded:** the air-gap finding (CER-005) was not
+closed. Re-running the reproduction disproved half the phase's own premise: origin
+independence held, but "nine rows rendered" was a grep counting an inert template literal.
+CER-005 stayed open with corrected evidence. Six findings were filed during the phase
+(CER-008..013).
+
+**Carried forward:** CER-009, CER-011 and CER-012 were recorded as three instances of one
+pattern, asserting on a cheap proxy instead of the invariant, and left for the next
+phase's framing.
+
+---
+
 ## cp-11
 
 **Phase:** 11 — Make the deploy repeatable, and make drift visible

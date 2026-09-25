@@ -250,7 +250,7 @@ body = ideo.split(h[0])[1].split('\n### ')[0].split('\n## ')[0]
 for i in ('CER-011', 'CER-012', 'CER-017'): assert i in body and h[0][4:].strip() in N[i], f'{i}: not recorded in, or not pointing at, the section'
 print('OK', fresh)
 EOF
-git diff $BASE -U0 -- docs/cer/backlog.md docs/checkpoints.md docs/ideology.md | grep '^+' | grep -vE '^\+\+\+' | grep -nE '/mnt/|/home/|~/' && exit 1
+git diff $BASE --word-diff=porcelain -U0 -- docs/cer/backlog.md docs/checkpoints.md docs/ideology.md | grep '^+' | grep -vE '^\+\+\+' | grep -nE '/mnt/|/home/|~/' && exit 1
 echo DONE
 ```
 

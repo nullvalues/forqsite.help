@@ -211,6 +211,29 @@ to itself. CER-009, CER-011 and CER-012 record the same substitution elsewhere.
 
 **Override path:** Only where the invariant is unobservable, and the check says so, as `drift-check.sh` does for `nginx.conf`.
 
+### Spec-authoring convention for mechanical checks
+
+This applies "Assert the invariant, not a proxy for it" to the checks a story spec writes
+into its Ensures and Tests. Each entry names a proxy that has already produced a wrong
+verdict here, and the invariant the check should assert instead.
+
+**Soft-wrapped phrases (CER-011).** Defect: a line-oriented grep for a multi-word phrase in
+prose fails when the phrase wraps across two source lines, so a cosmetic reflow reads as a
+content regression. Assert instead: normalise whitespace before matching prose, or assert on
+a structural anchor (a heading, a field label) rather than the wrapped sentence.
+
+**Inert source counted as rendered (CER-012).** Defect: grepping a `--dump-dom` output
+counts matches inside `<script>` template source as rendered nodes, which once reported
+ledger rows as rendered when none were. Assert instead: strip `<script>` and `<style>`
+blocks before asserting a render, or assert on a marker only the renderer emits. Hold every
+other variable constant, so a comparison measures the one variable it names.
+
+**Self-closing ranges (CER-017).** Defect: an `awk` range anchored on the same heading
+pattern at both ends closes on its own start line, so a length assertion built on it can
+never fail, and scanning to the next heading overshoots a last-in-section block. Assert
+instead: bound the range on the block's own fields, or count those fields directly, and
+state the method next to the number.
+
 
 ---
 
