@@ -240,7 +240,7 @@ assert f'{nums[len(ids)]} of them' in T['gap-handoff.html'], 'intro count word'
 for g in added: assert re.search(rf'<strong>[^<]*\b{g[4:]}\b', T['gap-handoff.html'].split('TL;DR')[1].split('P1 —')[0]), f'{g} not placed in the TL;DR'
 BL = B['index.html'].splitlines(True); NL = T['index.html'].splitlines(True)
 lo = [k for k, l in enumerate(BL) if 'const ledger = [' in l]; assert len(lo) == 1; lo = lo[0]
-hi = next(k for k in range(lo, len(BL)) if BL[k].strip() == '];')
+hi = next((k for k in range(lo + 1, len(BL)) if BL[k].lstrip().startswith(']')), None); assert hi is not None and BL[hi].strip().startswith('].map((it) =>'), 'ledger array end not found'
 cap = [k for k, l in enumerate(BL) if 'never on the command line' in l]; assert len(cap) == 1; cap = cap[0]
 for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, BL, NL, autojunk=False).get_opcodes():
     if tag != 'equal': assert (lo < i1 <= hi and i2 <= hi) or (i1, i2) == (cap, cap + 1), f'index.html change outside the ledger and the caption at {i1}-{i2}'

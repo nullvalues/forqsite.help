@@ -67,7 +67,7 @@
       "text": "forqsite known gaps · verified against nullvalues/forqsite@1fda3228 · 24 september 2026",
       "commit": "1fda3228",
       "date": "2026-09-24",
-      "scope": "Page footer: every GAP entry (GAP-003 to GAP-010, including GAP-012), one claim per entry for its problem statement and evidence rows, except the GAP-012 evidence rows, which carry their own table-row stamp."
+      "scope": "Page footer: every GAP entry on the page, one claim per entry for its problem statement and evidence rows, except the GAP-012 evidence rows, which carry their own table-row stamp."
     }
   ],
   "claims": [
@@ -237,6 +237,46 @@
         {
           "path": "package.json",
           "symbol": "\"db:seed-platform\": \"dotenv -e .env.local -- tsx src/db/seed-platform.ts\","
+        },
+        {
+          "path": "docs/operator-runbook.md",
+          "symbol": "export DATABASE_URL=$(grep DATABASE_URL .env.local | cut -d= -f2-)"
+        },
+        {
+          "path": "scripts/firstrun.sh",
+          "symbol": "cp .env.local.example .env.local"
+        },
+        {
+          "path": "docs/operator-runbook.md",
+          "symbol": "cp .env.local.example .env.local"
+        },
+        {
+          "path": ".env.local.example",
+          "symbol": "# INTEGRATION_DATABASE_URL — the dedicated database `pnpm test:integration`"
+        },
+        {
+          "path": ".env.local.example",
+          "symbol": "# INTEGRATION_DATABASE_URL=postgresql://forqsite:changeme@127.0.0.1:5432/forqsite_integration"
+        },
+        {
+          "path": ".env.local.example",
+          "symbol": "FORQSITE_CREDENTIALS_ENCRYPTION_KEY="
+        },
+        {
+          "path": "scripts/backup.sh",
+          "symbol": "the password must NOT appear on the command line"
+        },
+        {
+          "path": "scripts/restore.sh",
+          "symbol": "IDENTITY_ROW=\"$(psql -X -At -v ON_ERROR_STOP=1 \"${DATABASE_URL}\" -c \"SELECT current_database(), inet_server_addr(), inet_server_port()\" </dev/null)\""
+        },
+        {
+          "path": "scripts/restore.sh",
+          "symbol": "gunzip -c \"$BACKUP_FILE\" | psql -X -v ON_ERROR_STOP=1 \"${DATABASE_URL}\""
+        },
+        {
+          "path": "scripts/restore.sh",
+          "symbol": "psql -X -v ON_ERROR_STOP=1 \"${DATABASE_URL}\" -c \""
         }
       ],
       "stamp": "S-01",
@@ -1191,6 +1231,78 @@
         }
       ],
       "note": "CHANGED: the first-run.md evidence row quoted \"apt-get install postgresql-18-pgvector\"; the file has \"sudo apt-get install -y postgresql-18-pgvector\", and the row now quotes it exactly."
+    },
+    {
+      "id": "C-037",
+      "page": "gap-handoff.html",
+      "location": "GAP-013 entry, problem and evidence",
+      "claim": "The runbook's backup and restore blocks extract DATABASE_URL with an unanchored grep; against .env.local.example, which forqsite's install copies to .env.local, it returns four lines, while the key extraction in the same block matches one line.",
+      "quote": "against that file the line returns four lines",
+      "evidence": [
+        {
+          "path": "docs/operator-runbook.md",
+          "symbol": "export DATABASE_URL=$(grep DATABASE_URL .env.local | cut -d= -f2-)"
+        },
+        {
+          "path": "scripts/firstrun.sh",
+          "symbol": "cp .env.local.example .env.local"
+        },
+        {
+          "path": "docs/operator-runbook.md",
+          "symbol": "cp .env.local.example .env.local"
+        },
+        {
+          "path": ".env.local.example",
+          "symbol": "# INTEGRATION_DATABASE_URL — the dedicated database `pnpm test:integration`"
+        },
+        {
+          "path": ".env.local.example",
+          "symbol": "# INTEGRATION_DATABASE_URL=postgresql://forqsite:changeme@127.0.0.1:5432/forqsite_integration"
+        },
+        {
+          "path": ".env.local.example",
+          "symbol": "FORQSITE_CREDENTIALS_ENCRYPTION_KEY="
+        },
+        {
+          "path": "package.json",
+          "symbol": "\"start\": \"dotenv -e .env.local -- next start -H 0.0.0.0 -p 6020\","
+        }
+      ],
+      "stamp": "S-07",
+      "result": "added",
+      "note": "ADDED: verified at the release commit on 2026-09-25 by running the runbook's line against .env.local.example, which yields four lines; the footer stamp's printed date, 24 september 2026, is the earlier verification of the entries it already covered."
+    },
+    {
+      "id": "C-038",
+      "page": "gap-handoff.html",
+      "location": "GAP-014 entry, problem and evidence",
+      "claim": "backup.sh's header says the password must not appear on the command line, yet backup.sh passes DATABASE_URL, password included, to pg_dump as an argument and restore.sh passes it to each of its three psql calls.",
+      "quote": "every one of those commands receives the password as an argument",
+      "evidence": [
+        {
+          "path": "scripts/backup.sh",
+          "symbol": "the password must NOT appear on the command line"
+        },
+        {
+          "path": "scripts/backup.sh",
+          "symbol": "pg_dump \"${DATABASE_URL}\" | gzip > \"$DUMP_FILE\""
+        },
+        {
+          "path": "scripts/restore.sh",
+          "symbol": "IDENTITY_ROW=\"$(psql -X -At -v ON_ERROR_STOP=1 \"${DATABASE_URL}\" -c \"SELECT current_database(), inet_server_addr(), inet_server_port()\" </dev/null)\""
+        },
+        {
+          "path": "scripts/restore.sh",
+          "symbol": "gunzip -c \"$BACKUP_FILE\" | psql -X -v ON_ERROR_STOP=1 \"${DATABASE_URL}\""
+        },
+        {
+          "path": "scripts/restore.sh",
+          "symbol": "psql -X -v ON_ERROR_STOP=1 \"${DATABASE_URL}\" -c \""
+        }
+      ],
+      "stamp": "S-07",
+      "result": "added",
+      "note": "ADDED: verified at the release commit on 2026-09-25 by running backup.sh and restore.sh against stub pg_dump and psql binaries that record their arguments; every call received the password. pg_dump and psql were not run against a server. The footer stamp's printed date, 24 september 2026, is the earlier verification of the entries it already covered."
     }
   ]
 }
