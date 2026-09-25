@@ -2,7 +2,7 @@
 id: CONTENT-034
 rail: CONTENT
 title: Replace env parsing in the backup, cron and restore blocks with forqsite's own loader
-status: draft
+status: complete
 phase: "12"
 story_class: doc
 auth_gated: false
